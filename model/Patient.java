@@ -1,7 +1,7 @@
 package clinicapp.model;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;  // TODO - Assign this cause why not :D
+// import java.time.format.DateTimeFormatter; Should I format the date?
 
 public class Patient {
     // When creating an object, assigns the Patient by the nextId, then increments by 1
@@ -39,8 +39,16 @@ public class Patient {
         return id;
     }
 
+    public String getGender() {
+        return gender;
+    }
+
     public String getName() {
         return name;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
     }
 
     public String getPhoneNumber() {
@@ -63,9 +71,21 @@ public class Patient {
         return allergies;
     }
 
+    public int getAge() {
+        return LocalDate.now().getYear() - dateOfBirth.getYear(); // Calculate based on the Date of Birth instead (Uses LocalDate)
+    }
+
     // Setter Methods - Patient
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
 
     public void setPhoneNumber(String phoneNumber) {
@@ -88,6 +108,16 @@ public class Patient {
         this.allergies = allergies;
     }
 
-    // TODO - Age Variable - Was recommended to try and calculate based on the Date of Birth instead (Uses LocalDate)
-    // TODO - Implement Formatter for Local Date and such...
+
+    // Utilities - Patient
+    public String getDetailedInfo() {
+        return "Patient ID: " + id +
+               "\n Name: " + name +
+               "\n Age: " + getAge() +
+               "\n Gender: " + gender +
+               "\n Date of Birth: " + dateOfBirth +
+               "\n Phone Number: " + phoneNumber +
+               "\n Email: " + (email != null ? email : "N/A") +
+               "\n Address: " + (address != null ? address : "N/A");
+    }
 }

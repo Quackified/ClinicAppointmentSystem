@@ -1,7 +1,7 @@
-package clinicapp.src.model;
+package clinicapp.model;
 
-import java.util.ArrayList; // TODO
-import java.util.List; // TODO
+import java.util.ArrayList;
+import java.util.List;
 
 public class Doctor {
     private static int nextId = 1;
@@ -27,7 +27,7 @@ public class Doctor {
         this.specialization = specialization;
         this.phoneNumber = phoneNumber;
         this.email = email;
-        this.availableDays = availableDays; // Todo - requires integration of the lists here
+        this.availableDays = availableDays;
         this.startTime = startTime;
         this.endTime = endTime;
         this.isAvailable = isAvailable;
@@ -36,6 +36,10 @@ public class Doctor {
 
 
     // Getter Methods - Doctor
+    public int getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
     }
@@ -52,11 +56,9 @@ public class Doctor {
         return email;
     }
     
-    /*  TODO - WILL ADD LATER
-    public List<String< getAvailableDays() {
-        return ???
+    public List<String> getAvailableDays() {
+        return new ArrayList<>(availableDays); // Basically means, create a copy of what is inside the variable
     }
-    */
 
     public String getStartTime() {
         return startTime;
@@ -68,7 +70,6 @@ public class Doctor {
     public boolean getIsAvailable() {
         return isAvailable;
     }
-
 
 
     // Setter Methods - Doctor
@@ -88,11 +89,9 @@ public class Doctor {
         this.email = email;
     }
 
-    /*  TODO - WILL ADD LATER
-    public List<void< setAvailableDays() {
-        this. ahh code here
+    public void setAvailableDays(List<String> availableDays) {
+        this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>(); // True = Copies the current container | False = Makes a new List, uses that instead | By default = Variable has no container #NullPointerException
     }
-    */
 
     public void setStartTime(String startTime) {
         this.startTime = startTime;
@@ -107,5 +106,15 @@ public class Doctor {
     }
 
 
-    // TODO - Implement Formatter for Local Date and such...
+    public String getDetailedInfo() {
+        String status = isAvailable ? "Available" : "Not Available";
+        return "Doctor ID: " + id +
+               "\n Name: " + name +
+               "\n Specialization: " + specialization +
+               "\n Phone Number: " + phoneNumber +
+               "\n Email: " + (email != null ? email : "N/A") +
+               "\n Status: " + status +
+               "\n Working Hours: " + startTime + " – " + endTime +
+               "\n Available Days: " + String.join(", ", availableDays); 
+    }
 }
