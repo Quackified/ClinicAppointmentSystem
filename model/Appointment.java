@@ -1,7 +1,10 @@
 package clinicapp.model;
 
+import java.sql.Date;
 import java.time.LocalDateTime;
-// import java.time.format.DateTimeFormatter; TODO - Needs to be integrated
+import java.time.format.DateTimeFormatter;
+
+import clinicapp.util.DateUtils;
 
 /**
  * Appointment model representing a scheduled appointment in the clinic system.
@@ -19,9 +22,6 @@ public class Appointment {
     private String notes;
     private LocalDateTime createdAt;
     
-    /**
-     * Enum representing the status of an appointment.
-     */
     public enum AppointmentStatus {
         SCHEDULED,   // Appointment is scheduled and waiting
         CONFIRMED,   // Appointment has been confirmed
@@ -31,9 +31,6 @@ public class Appointment {
         NO_SHOW      // Patient did not show up
     }
     
-    /**
-     * Constructor for creating a new appointment with auto-generated ID.
-     */
     public Appointment(Patient patient, Doctor doctor, LocalDateTime appointmentDateTime, String reason) {
         this.id = nextId++;
         this.patient = patient;
@@ -102,43 +99,11 @@ public class Appointment {
     public void setNotes(String notes) {
         this.notes = notes;
     }
-    
-    /* Get formatted display string for appointment information.
-    @Override
-    public String toString() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        return String.format("ID: %d | %s | Patient: %s | Dr. %s | %s | Status: %s",
-        id, appointmentDateTime.format(formatter), patient.getName(), 
-        doctor.getName(), reason, status);
-    } */
-    
-    /*
-    public String getDetailedInfo() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n╔════════════════════════════════════════════════════════════════╗\n");
-        sb.append("║                    APPOINTMENT DETAILS                         ║\n");
-        sb.append("╠════════════════════════════════════════════════════════════════╣\n");
-        sb.append(String.format("║ Appointment ID : %-45d ║\n", id));
-        sb.append(String.format("║ Date & Time    : %-45s ║\n", appointmentDateTime.format(formatter)));
-        sb.append(String.format("║ Patient        : %-45s ║\n", patient.getName()));
-        sb.append(String.format("║ Patient ID     : %-45d ║\n", patient.getId()));
-        sb.append(String.format("║ Doctor         : Dr. %-41s ║\n", doctor.getName()));
-        sb.append(String.format("║ Doctor ID      : %-45d ║\n", doctor.getId()));
-        sb.append(String.format("║ Specialization : %-45s ║\n", doctor.getSpecialization()));
-        sb.append(String.format("║ Reason         : %-45s ║\n", reason));
-        sb.append(String.format("║ Status         : %-45s ║\n", status));
-        if (notes != null && !notes.isEmpty()) {
-            sb.append(String.format("║ Notes          : %-45s ║\n", notes));
-        }
-        sb.append(String.format("║ Created At     : %-45s ║\n", createdAt.format(formatter)));
-        sb.append("╚════════════════════════════════════════════════════════════════╝\n");
-        return sb.toString();
-    } */
 
     public String getDetailedInfo() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy hh:mm a");
         return "Appointment ID: " + id +
-               "\n Date & Time: " + null + // TODO - Formatter
+               "\n Date & Time: " + DateUtils.formatDateTime(appointmentDateTime) +
                "\n Patient: " + patient.getName() +
                "\n Patient ID: " + patient.getId() +
                "\n Doctor: " + doctor.getName() +
@@ -146,7 +111,7 @@ public class Appointment {
                "\n Specialization: " + doctor.getSpecialization() +
                "\n Reason: " + reason +
                "\n Status: " + status + 
-               "\n Notes: " + (notes != null && !notes.isEmpty() ? notes : "") + // TODO - check if it's alright
-               "\n Created At: " + createdAt; // TODO - Formaatter
+               "\n Notes: " + (notes != null && !notes.isEmpty() ? notes : "None") +
+               "\n Created At: " + DateUtils.formatDateTime(createdAt);
     }
 }

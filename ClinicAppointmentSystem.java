@@ -1,4 +1,4 @@
-package clinicapp.util;
+package clinicapp;
 
 import clinicapp.ui.ClinicUI;
 

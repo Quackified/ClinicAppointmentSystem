@@ -1,5 +1,8 @@
 package clinicapp.model;
 
+import clinicapp.util.DateUtils;
+import java.sql.Date;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,15 +15,15 @@ public class Doctor {
     private String phoneNumber;
     private String email;
     private List<String> availableDays; // List of available days "Monday", "Tuesday", etc
-    private String startTime;   
-    private String endTime;
+    private LocalTime startTime;   
+    private LocalTime endTime;
     private boolean isAvailable;
 
 
 
     // Constructor for Doctor - Contains Essential Details
     public Doctor(String name, String specialization, String phoneNumber, String email,
-            List<String> availableDays, String startTime, String endTime, boolean isAvailable) {
+            List<String> availableDays, LocalTime startTime, LocalTime endTime, boolean isAvailable) {
         this.id = nextId++; // not in the parameters since it is assigned independtly when instantiated.
 
         this.name = name;
@@ -60,11 +63,11 @@ public class Doctor {
         return new ArrayList<>(availableDays); // Basically means, create a copy of what is inside the variable
     }
 
-    public String getStartTime() {
+    public LocalTime getStartTime() {
         return startTime;
     }
 
-    public String getEndTime() {
+    public LocalTime getEndTime() {
         return endTime;
     }
     public boolean getIsAvailable() {
@@ -93,11 +96,11 @@ public class Doctor {
         this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>(); // True = Copies the current container | False = Makes a new List, uses that instead | By default = Variable has no container #NullPointerException
     }
 
-    public void setStartTime(String startTime) {
+    public void setStartTime(LocalTime startTime) {
         this.startTime = startTime;
     }
 
-    public void setEndTime(String endTime) {
+    public void setEndTime(LocalTime endTime) {
         this.endTime = endTime;
     }
 
@@ -114,7 +117,7 @@ public class Doctor {
                "\n Phone Number: " + phoneNumber +
                "\n Email: " + (email != null ? email : "N/A") +
                "\n Status: " + status +
-               "\n Working Hours: " + startTime + " – " + endTime +
+               "\n Working Hours: " + DateUtils.formatTime(startTime) + " – " + DateUtils.formatTime(endTime) +
                "\n Available Days: " + String.join(", ", availableDays); 
     }
 }

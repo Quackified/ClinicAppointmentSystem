@@ -1,7 +1,8 @@
 package clinicapp.model;
 
+import clinicapp.util.DateUtils;
 import java.time.LocalDate;
-// import java.time.format.DateTimeFormatter; Should I format the date?
+import java.time.Period;
 
 public class Patient {
     // When creating an object, assigns the Patient by the nextId, then increments by 1
@@ -72,7 +73,7 @@ public class Patient {
     }
 
     public int getAge() {
-        return LocalDate.now().getYear() - dateOfBirth.getYear(); // Calculate based on the Date of Birth instead (Uses LocalDate)
+        return Period.between(dateOfBirth, LocalDate.now()).getYears(); // Calculate based on the Date of Birth instead (Uses LocalDate)
     }
 
     // Setter Methods - Patient
@@ -115,7 +116,7 @@ public class Patient {
                "\n Name: " + name +
                "\n Age: " + getAge() +
                "\n Gender: " + gender +
-               "\n Date of Birth: " + dateOfBirth +
+               "\n Date of Birth: " + DateUtils.formatDate(dateOfBirth) +
                "\n Phone Number: " + phoneNumber +
                "\n Email: " + (email != null ? email : "N/A") +
                "\n Address: " + (address != null ? address : "N/A");
