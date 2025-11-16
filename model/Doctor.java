@@ -23,19 +23,18 @@ public class Doctor {
 
     // Constructor for Doctor - Contains Essential Details
     public Doctor(String name, String specialization, String phoneNumber, String email,
-            List<String> availableDays, LocalTime startTime, LocalTime endTime, boolean isAvailable) {
+            List<String> availableDays, LocalTime startTime, LocalTime endTime) {
         this.id = nextId++; // not in the parameters since it is assigned independtly when instantiated.
 
         this.name = name;
         this.specialization = specialization;
         this.phoneNumber = phoneNumber;
         this.email = email;
-        this.availableDays = availableDays;
+        this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>();
         this.startTime = startTime;
         this.endTime = endTime;
-        this.isAvailable = isAvailable;
+        this.isAvailable = true;
     }
-
 
 
     // Getter Methods - Doctor
@@ -70,7 +69,7 @@ public class Doctor {
     public LocalTime getEndTime() {
         return endTime;
     }
-    public boolean getIsAvailable() {
+    public boolean isAvailable() {
         return isAvailable;
     }
 

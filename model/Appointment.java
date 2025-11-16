@@ -2,14 +2,9 @@ package clinicapp.model;
 
 import java.sql.Date;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import clinicapp.util.DateUtils;
 
-/**
- * Appointment model representing a scheduled appointment in the clinic system.
- * Links patients with doctors at specific times and tracks appointment status.
- */
 public class Appointment {
     private static int nextId = 1;
     
@@ -101,7 +96,6 @@ public class Appointment {
     }
 
     public String getDetailedInfo() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy hh:mm a");
         return "Appointment ID: " + id +
                "\n Date & Time: " + DateUtils.formatDateTime(appointmentDateTime) +
                "\n Patient: " + patient.getName() +
