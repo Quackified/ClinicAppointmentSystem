@@ -17,14 +17,14 @@ public class DoctorManager {
     }
 
     public Doctor addDoctor(String name, String specialization, String phoneNumber, String email,
-            List<String> availableDays, LocalTime startTime, LocalTime endTime) {
+            List<String> availableDays, String startTime, String endTime) {
         Doctor doctor = new Doctor(name, specialization, phoneNumber, email, availableDays, startTime, endTime);
         doctors.put(doctor.getId(), doctor);
         return doctor;
     }
 
     // Methods
-    public Doctor getDoctor(int id) {
+    public Doctor getDoctorById(int id) {
         return doctors.get(id);
     }
 
@@ -70,7 +70,7 @@ public class DoctorManager {
     }
 
     public Boolean updateDoctor(int id, String name, String specialization, String phoneNumber, String email,
-            List<String> availableDays, LocalTime startTime, LocalTime endTime) {
+            List<String> availableDays, String startTime, String endTime) {
         Doctor doctor = doctors.get(id);
         if (doctor == null) {
             return false;
@@ -92,7 +92,7 @@ public class DoctorManager {
         if (doctor == null) {
             return false;
         }
-        doctor.setIsAvailable(available);
+        doctor.setAvailable(available);
         return true;
     }
 

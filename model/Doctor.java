@@ -1,7 +1,5 @@
 package clinicapp.model;
 
-import clinicapp.util.DateUtils;
-import java.sql.Date;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,15 +13,15 @@ public class Doctor {
     private String phoneNumber;
     private String email;
     private List<String> availableDays; // List of available days "Monday", "Tuesday", etc
-    private LocalTime startTime;   
-    private LocalTime endTime;
+    private String startTime;   
+    private String endTime;
     private boolean isAvailable;
 
 
 
     // Constructor for Doctor - Contains Essential Details
     public Doctor(String name, String specialization, String phoneNumber, String email,
-            List<String> availableDays, LocalTime startTime, LocalTime endTime) {
+            List<String> availableDays, String startTime, String endTime) {
         this.id = nextId++; // not in the parameters since it is assigned independtly when instantiated.
 
         this.name = name;
@@ -62,11 +60,11 @@ public class Doctor {
         return new ArrayList<>(availableDays); // Basically means, create a copy of what is inside the variable
     }
 
-    public LocalTime getStartTime() {
+    public String getStartTime() {
         return startTime;
     }
 
-    public LocalTime getEndTime() {
+    public String getEndTime() {
         return endTime;
     }
     public boolean isAvailable() {
@@ -95,16 +93,16 @@ public class Doctor {
         this.availableDays = availableDays != null ? new ArrayList<>(availableDays) : new ArrayList<>(); // True = Copies the current container | False = Makes a new List, uses that instead | By default = Variable has no container #NullPointerException
     }
 
-    public void setStartTime(LocalTime startTime) {
+    public void setStartTime(String startTime) {
         this.startTime = startTime;
     }
 
-    public void setEndTime(LocalTime endTime) {
+    public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
 
-    public void setIsAvailable(boolean isAvailable) {
-        this.isAvailable = isAvailable;
+    public void setAvailable(boolean available) {
+        this.isAvailable = available;
     }
 
 
@@ -116,7 +114,7 @@ public class Doctor {
                "\n Phone Number: " + phoneNumber +
                "\n Email: " + (email != null ? email : "N/A") +
                "\n Status: " + status +
-               "\n Working Hours: " + DateUtils.formatTime(startTime) + " – " + DateUtils.formatTime(endTime) +
+               "\n Working Hours: " + startTime + " – " + endTime +
                "\n Available Days: " + String.join(", ", availableDays); 
     }
 }

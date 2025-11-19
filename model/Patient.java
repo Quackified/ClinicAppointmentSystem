@@ -1,6 +1,5 @@
 package clinicapp.model;
 
-import clinicapp.util.DateUtils;
 import java.time.LocalDate;
 import java.time.Period;
 
@@ -116,7 +115,7 @@ public class Patient {
                "\n Name: " + name +
                "\n Age: " + getAge() +
                "\n Gender: " + gender +
-               "\n Date of Birth: " + DateUtils.formatDate(dateOfBirth) +
+               "\n Date of Birth: " + dateOfBirth +
                "\n Phone Number: " + phoneNumber +
                "\n Email: " + (email != null ? email : "N/A") +
                "\n Address: " + (address != null ? address : "N/A");
