@@ -1,9 +1,7 @@
 package clinicapp.gui;
 
-import clinicapp.io.CsvExporter;
-import clinicapp.io.CsvImporter;
+import clinicapp.gui.components.*;
 import clinicapp.model.Appointment;
-import clinicapp.model.Appointment.AppointmentStatus;
 import clinicapp.model.Doctor;
 import clinicapp.model.Patient;
 import clinicapp.service.AppointmentManager;
@@ -12,10 +10,8 @@ import clinicapp.service.PatientManager;
 import clinicapp.util.InputValidator;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -27,436 +23,553 @@ public class AppointmentPanel extends JPanel {
     private DoctorManager doctorManager;
     private JTable appointmentTable;
     private DefaultTableModel tableModel;
-    
-    public AppointmentPanel(AppointmentManager appointmentManager, 
-                          PatientManager patientManager, 
-                          DoctorManager doctorManager) {
+
+    public AppointmentPanel(AppointmentManager appointmentManager,
+            PatientManager patientManager,
+            DoctorManager doctorManager) {
         this.appointmentManager = appointmentManager;
         this.patientManager = patientManager;
         this.doctorManager = doctorManager;
         initializeUI();
+    }
+
+    private void initializeUI() {
+        setLayout(new BorderLayout(0, 0));
+        setBackground(UIConstants.GRAY_50);
+
+        // Breadcrumb navigation
+        BreadcrumbPanel breadcrumb = new BreadcrumbPanel("Dashboard", "Appointments");
+        add(breadcrumb, BorderLayout.NORTH);
+
+        // Main content panel
+        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
+        contentPanel.setBackground(UIConstants.GRAY_50);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
+
+        // Top toolbar
+        JPanel toolbarPanel = createToolbar();
+        contentPanel.add(toolbarPanel, BorderLayout.NORTH);
+
+        // Center table
+        JPanel tablePanel = createTablePanel();
+        contentPanel.add(tablePanel, BorderLayout.CENTER);
+
+        // Bottom buttons
+        JPanel bottomPanel = createBottomPanel();
+        contentPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        add(contentPanel, BorderLayout.CENTER);
+
+        // Initial load
         refreshTable();
     }
-    
-    private void initializeUI() {
-        setLayout(new BorderLayout());
-        
-        String[] columnNames = {"ID", "Date", "Start Time", "End Time", "Patient", "Doctor", "Reason", "Status"};
+
+    private JPanel createToolbar() {
+        JPanel toolbar = new JPanel(new BorderLayout(10, 0));
+        toolbar.setBackground(Color.WHITE);
+        toolbar.setBorder(BorderFactory.createCompoundBorder(
+                UIConstants.createCardBorder(),
+                BorderFactory.createEmptyBorder(10, 15, 10, 15)));
+
+        // Right side - Actions
+        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionsPanel.setBackground(Color.WHITE);
+
+        StyledButton scheduleButton = StyledButton.createPrimary("Schedule");
+        scheduleButton.setPreferredSize(new Dimension(120, 35));
+        scheduleButton.addActionListener(e -> showScheduleDialog());
+
+        StyledButton refreshButton = StyledButton.createSuccess("Refresh");
+        refreshButton.setPreferredSize(new Dimension(100, 35));
+        refreshButton.addActionListener(e -> refreshTable());
+
+        actionsPanel.add(scheduleButton);
+        actionsPanel.add(refreshButton);
+
+        toolbar.add(actionsPanel, BorderLayout.EAST);
+
+        return toolbar;
+    }
+
+    private JPanel createTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(UIConstants.createCardBorder());
+
+        // Table
+        String[] columnNames = { "ID", "Date", "Time", "Patient", "Doctor", "Reason", "Status" };
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-        
+
         appointmentTable = new JTable(tableModel);
-        appointmentTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        appointmentTable.setRowHeight(30);
+        appointmentTable.setFont(UIConstants.FONT_BODY);
+        appointmentTable.getTableHeader().setFont(UIConstants.FONT_LABEL);
+
+        // Add double-click to view details
+        appointmentTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    showAppointmentDetails();
+                }
+            }
+        });
+
         JScrollPane scrollPane = new JScrollPane(appointmentTable);
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        
-        JButton scheduleButton = new JButton("Schedule Appointment");
-        JButton viewButton = new JButton("View Details");
-        JButton updateButton = new JButton("Update");
-        JButton confirmButton = new JButton("Confirm");
-        JButton completeButton = new JButton("Complete");
-        JButton cancelButton = new JButton("Cancel Appointment");
-        JButton exportButton = new JButton("Export to CSV");
-        JButton importButton = new JButton("Import from CSV");
-        JButton refreshButton = new JButton("Refresh");
-        
-        scheduleButton.addActionListener(e -> showScheduleDialog());
-        viewButton.addActionListener(e -> showAppointmentDetails());
-        updateButton.addActionListener(e -> showUpdateDialog());
-        confirmButton.addActionListener(e -> confirmAppointment());
-        completeButton.addActionListener(e -> completeAppointment());
-        cancelButton.addActionListener(e -> cancelAppointment());
-        exportButton.addActionListener(e -> exportAppointments());
-        importButton.addActionListener(e -> importAppointments());
-        refreshButton.addActionListener(e -> refreshTable());
-        
-        buttonPanel.add(scheduleButton);
-        buttonPanel.add(viewButton);
-        buttonPanel.add(updateButton);
-        buttonPanel.add(confirmButton);
-        buttonPanel.add(completeButton);
-        buttonPanel.add(cancelButton);
-        buttonPanel.add(exportButton);
-        buttonPanel.add(importButton);
-        buttonPanel.add(refreshButton);
-        
-        add(scrollPane, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
     }
-    
+
+    private JPanel createBottomPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(UIConstants.GRAY_50);
+
+        // Left side - Reschedule/Delete buttons
+        JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        leftButtons.setBackground(UIConstants.GRAY_50);
+
+        JButton rescheduleButton = new JButton("Reschedule");
+        rescheduleButton.setPreferredSize(new Dimension(120, 35));
+        rescheduleButton.addActionListener(e -> showUpdateDialog());
+
+        JButton deleteButton = new JButton("Delete");
+        deleteButton.setPreferredSize(new Dimension(100, 35));
+        deleteButton.addActionListener(e -> deleteAppointment());
+
+        leftButtons.add(rescheduleButton);
+        leftButtons.add(deleteButton);
+
+        // Right side - Status transition buttons
+        JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 10));
+        rightButtons.setBackground(UIConstants.GRAY_50);
+
+        JButton confirmButton = new JButton("Confirm");
+        confirmButton.setPreferredSize(new Dimension(90, 35));
+        confirmButton.addActionListener(e -> confirmAppointment());
+
+        JButton inProgressButton = new JButton("In Progress");
+        inProgressButton.setPreferredSize(new Dimension(110, 35));
+        inProgressButton.addActionListener(e -> markInProgress());
+
+        JButton completeButton = new JButton("Complete");
+        completeButton.setPreferredSize(new Dimension(100, 35));
+        completeButton.addActionListener(e -> markCompleted());
+
+        JButton noShowButton = new JButton("No Show");
+        noShowButton.setPreferredSize(new Dimension(90, 35));
+        noShowButton.addActionListener(e -> markNoShow());
+
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.setPreferredSize(new Dimension(80, 35));
+        cancelButton.addActionListener(e -> cancelAppointment());
+
+        rightButtons.add(confirmButton);
+        rightButtons.add(inProgressButton);
+        rightButtons.add(completeButton);
+        rightButtons.add(noShowButton);
+        rightButtons.add(cancelButton);
+
+        panel.add(leftButtons, BorderLayout.WEST);
+        panel.add(rightButtons, BorderLayout.EAST);
+
+        return panel;
+    }
+
     private void refreshTable() {
         tableModel.setRowCount(0);
         List<Appointment> appointments = appointmentManager.getAllAppointments();
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        
+
         for (Appointment apt : appointments) {
+            String timeSlot = apt.getStartTime().format(timeFormatter) + " - " +
+                    apt.getEndTime().format(timeFormatter);
+
             Object[] row = {
-                apt.getId(),
-                apt.getAppointmentDate(),
-                apt.getStartTime().format(timeFormatter),
-                apt.getEndTime().format(timeFormatter),
-                apt.getPatient().getName(),
-                "Dr. " + apt.getDoctor().getName(),
-                apt.getReason(),
-                apt.getStatus()
+                    apt.getId(),
+                    apt.getAppointmentDate(),
+                    timeSlot,
+                    apt.getPatient().getName(),
+                    "Dr. " + apt.getDoctor().getName(),
+                    apt.getReason(),
+                    apt.getStatus()
             };
             tableModel.addRow(row);
         }
     }
-    
+
     private void showScheduleDialog() {
-        List<Patient> patients = patientManager.getAllPatients();
-        List<Doctor> doctors = doctorManager.getAvailableDoctors();
-        
-        if (patients.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No patients available. Please add patients first.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        if (doctors.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No available doctors. Please add doctors first.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Schedule Appointment", true);
-        dialog.setLayout(new GridLayout(0, 2, 10, 10));
-        dialog.setSize(500, 350);
+        dialog.setSize(500, 550);
         dialog.setLocationRelativeTo(this);
-        
+
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Patient selection
         JComboBox<String> patientCombo = new JComboBox<>();
-        for (Patient p : patients) {
-            patientCombo.addItem(p.getId() + " - " + p.getName());
+        List<Patient> patients = patientManager.getAllPatients();
+        for (Patient patient : patients) {
+            patientCombo.addItem(patient.getId() + " - " + patient.getName());
         }
-        
+
+        // Doctor selection
         JComboBox<String> doctorCombo = new JComboBox<>();
-        for (Doctor d : doctors) {
-            doctorCombo.addItem(d.getId() + " - Dr. " + d.getName() + " (" + d.getSpecialization() + ")");
+        List<Doctor> doctors = doctorManager.getAvailableDoctors();
+        for (Doctor doctor : doctors) {
+            doctorCombo
+                    .addItem(doctor.getId() + " - Dr. " + doctor.getName() + " (" + doctor.getSpecialization() + ")");
         }
-        
-        JTextField dateField = new JTextField();
-        JTextField startTimeField = new JTextField();
-        JTextField endTimeField = new JTextField();
-        JTextField reasonField = new JTextField();
-        
-        dialog.add(new JLabel("Patient:"));
-        dialog.add(patientCombo);
-        dialog.add(new JLabel("Doctor:"));
-        dialog.add(doctorCombo);
-        dialog.add(new JLabel("Date (yyyy-MM-dd):"));
-        dialog.add(dateField);
-        dialog.add(new JLabel("Start Time (HH:mm):"));
-        dialog.add(startTimeField);
-        dialog.add(new JLabel("End Time (HH:mm):"));
-        dialog.add(endTimeField);
-        dialog.add(new JLabel("Reason:"));
-        dialog.add(reasonField);
-        
-        JButton saveButton = new JButton("Schedule");
-        JButton cancelButton = new JButton("Cancel");
-        
+
+        DatePicker datePicker = new DatePicker();
+        TimePicker startTimePicker = new TimePicker();
+        TimePicker endTimePicker = new TimePicker();
+        JTextField reasonField = new JTextField(20);
+
+        int row = 0;
+        addFormField(formPanel, gbc, row++, "Patient: *", patientCombo);
+        addFormField(formPanel, gbc, row++, "Doctor: *", doctorCombo);
+        addFormField(formPanel, gbc, row++, "Date: *", datePicker);
+        addFormField(formPanel, gbc, row++, "Start Time: *", startTimePicker);
+        addFormField(formPanel, gbc, row++, "End Time: *", endTimePicker);
+        addFormField(formPanel, gbc, row++, "Reason: *", reasonField);
+
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        StyledButton saveButton = StyledButton.createPrimary("Schedule");
+        JButton cancelBtn = new JButton("Cancel");
+
         saveButton.addActionListener(e -> {
-            String patientSelection = (String) patientCombo.getSelectedItem();
-            String doctorSelection = (String) doctorCombo.getSelectedItem();
-            String dateStr = dateField.getText().trim();
-            String startTimeStr = startTimeField.getText().trim();
-            String endTimeStr = endTimeField.getText().trim();
-            String reason = reasonField.getText().trim();
-            
-            if (!InputValidator.isValidString(reason)) {
-                JOptionPane.showMessageDialog(dialog, "Reason is required", "Error", JOptionPane.ERROR_MESSAGE);
+            if (patientCombo.getSelectedItem() == null || doctorCombo.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(dialog, "Please select patient and doctor",
+                        "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
+            String dateStr = datePicker.getDateString();
+            String startTimeStr = startTimePicker.getTimeString();
+            String endTimeStr = endTimePicker.getTimeString();
+            String reason = reasonField.getText().trim();
+
             LocalDate date = InputValidator.parseAndValidateDate(dateStr);
             if (date == null) {
-                JOptionPane.showMessageDialog(dialog, "Invalid date format. Use yyyy-MM-dd", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Invalid date format. Use yyyy-MM-dd", "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             LocalTime startTime = InputValidator.parseAndValidateTime(startTimeStr);
             if (startTime == null) {
-                JOptionPane.showMessageDialog(dialog, "Invalid start time format. Use HH:mm", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Invalid start time format. Use HH:mm", "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             LocalTime endTime = InputValidator.parseAndValidateTime(endTimeStr);
             if (endTime == null) {
-                JOptionPane.showMessageDialog(dialog, "Invalid end time format. Use HH:mm", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Invalid end time format. Use HH:mm", "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             if (!endTime.isAfter(startTime)) {
-                JOptionPane.showMessageDialog(dialog, "End time must be after start time", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "End time must be after start time", "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
-            int patientId = Integer.parseInt(patientSelection.split(" - ")[0]);
-            int doctorId = Integer.parseInt(doctorSelection.split(" - ")[0]);
-            
+
+            int patientId = Integer.parseInt(((String) patientCombo.getSelectedItem()).split(" - ")[0]);
+            int doctorId = Integer.parseInt(((String) doctorCombo.getSelectedItem()).split(" - ")[0]);
+
             Patient patient = patientManager.getPatientById(patientId);
             Doctor doctor = doctorManager.getDoctorById(doctorId);
-            
+
             Appointment appointment = appointmentManager.scheduleAppointment(
-                patient, doctor, date, startTime, endTime, reason
-            );
-            
+                    patient, doctor, date, startTime, endTime, reason);
+
             if (appointment != null) {
-                JOptionPane.showMessageDialog(dialog, "Appointment scheduled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Appointment scheduled successfully!", "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
                 refreshTable();
                 dialog.dispose();
             } else {
-                JOptionPane.showMessageDialog(dialog, "Failed to schedule appointment. Doctor may have a conflict.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Failed to schedule appointment. Doctor may have a conflict.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
-        
-        cancelButton.addActionListener(e -> dialog.dispose());
-        
-        JPanel buttonPanel = new JPanel();
+
+        cancelBtn.addActionListener(e -> dialog.dispose());
+
         buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
-        
-        dialog.add(buttonPanel);
+        buttonPanel.add(cancelBtn);
+
+        dialog.setLayout(new BorderLayout());
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
-    
+
+    private void addFormField(JPanel panel, GridBagConstraints gbc, int row, String label, JComponent field) {
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.weightx = 0.3;
+        panel.add(new JLabel(label), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        panel.add(field, gbc);
+    }
+
     private void showAppointmentDetails() {
         int selectedRow = appointmentTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an appointment", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select an appointment to view",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         int appointmentId = (int) tableModel.getValueAt(selectedRow, 0);
         Appointment appointment = appointmentManager.getAppointmentById(appointmentId);
-        
+
         if (appointment != null) {
             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
             String details = String.format(
-                "ID: %d\nDate: %s\nTime: %s - %s\nPatient: %s (ID: %d)\nDoctor: Dr. %s (ID: %d)\nSpecialization: %s\nReason: %s\nStatus: %s\nNotes: %s",
-                appointment.getId(),
-                appointment.getAppointmentDate(),
-                appointment.getStartTime().format(timeFormatter),
-                appointment.getEndTime().format(timeFormatter),
-                appointment.getPatient().getName(),
-                appointment.getPatient().getId(),
-                appointment.getDoctor().getName(),
-                appointment.getDoctor().getId(),
-                appointment.getDoctor().getSpecialization(),
-                appointment.getReason(),
-                appointment.getStatus(),
-                appointment.getNotes() != null && !appointment.getNotes().isEmpty() ? appointment.getNotes() : "N/A"
-            );
+                    "Appointment ID: %d\n" +
+                            "Patient: %s\n" +
+                            "Doctor: Dr. %s\n" +
+                            "Date: %s\n" +
+                            "Time: %s - %s\n" +
+                            "Reason: %s\n" +
+                            "Status: %s",
+                    appointment.getId(),
+                    appointment.getPatient().getName(),
+                    appointment.getDoctor().getName(),
+                    appointment.getAppointmentDate(),
+                    appointment.getStartTime().format(timeFormatter),
+                    appointment.getEndTime().format(timeFormatter),
+                    appointment.getReason(),
+                    appointment.getStatus());
+
             JOptionPane.showMessageDialog(this, details, "Appointment Details", JOptionPane.INFORMATION_MESSAGE);
         }
     }
-    
+
     private void showUpdateDialog() {
         int selectedRow = appointmentTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an appointment", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select an appointment to update",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         int appointmentId = (int) tableModel.getValueAt(selectedRow, 0);
         Appointment appointment = appointmentManager.getAppointmentById(appointmentId);
-        
-        if (appointment == null) return;
-        
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Update Appointment", true);
-        dialog.setLayout(new GridLayout(0, 2, 10, 10));
-        dialog.setSize(500, 300);
+        if (appointment == null)
+            return;
+
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Reschedule Appointment", true);
+        dialog.setSize(500, 400);
         dialog.setLocationRelativeTo(this);
-        
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        
-        JTextField dateField = new JTextField(appointment.getAppointmentDate().toString());
-        JTextField startTimeField = new JTextField(appointment.getStartTime().format(timeFormatter));
-        JTextField endTimeField = new JTextField(appointment.getEndTime().format(timeFormatter));
-        JTextField reasonField = new JTextField(appointment.getReason());
-        JTextArea notesArea = new JTextArea(appointment.getNotes() != null ? appointment.getNotes() : "");
-        notesArea.setLineWrap(true);
-        notesArea.setWrapStyleWord(true);
-        JScrollPane notesScroll = new JScrollPane(notesArea);
-        
-        dialog.add(new JLabel("Date (yyyy-MM-dd):"));
-        dialog.add(dateField);
-        dialog.add(new JLabel("Start Time (HH:mm):"));
-        dialog.add(startTimeField);
-        dialog.add(new JLabel("End Time (HH:mm):"));
-        dialog.add(endTimeField);
-        dialog.add(new JLabel("Reason:"));
-        dialog.add(reasonField);
-        dialog.add(new JLabel("Notes:"));
-        dialog.add(notesScroll);
-        
-        JButton saveButton = new JButton("Save");
-        JButton cancelButton = new JButton("Cancel");
-        
+
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        DatePicker datePicker = new DatePicker();
+        datePicker.setDate(appointment.getAppointmentDate().toString());
+        TimePicker startTimePicker = new TimePicker();
+        startTimePicker.setTime(appointment.getStartTime().toString());
+        TimePicker endTimePicker = new TimePicker();
+        endTimePicker.setTime(appointment.getEndTime().toString());
+
+        int row = 0;
+        addFormField(formPanel, gbc, row++, "New Date: *", datePicker);
+        addFormField(formPanel, gbc, row++, "New Start Time: *", startTimePicker);
+        addFormField(formPanel, gbc, row++, "New End Time: *", endTimePicker);
+
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        StyledButton saveButton = StyledButton.createSuccess("Update");
+        JButton cancelBtn = new JButton("Cancel");
+
         saveButton.addActionListener(e -> {
-            String dateStr = dateField.getText().trim();
-            String startTimeStr = startTimeField.getText().trim();
-            String endTimeStr = endTimeField.getText().trim();
-            String reason = reasonField.getText().trim();
-            String notes = notesArea.getText().trim();
-            
-            LocalDate date = InputValidator.parseAndValidateDate(dateStr);
-            if (date == null) {
-                JOptionPane.showMessageDialog(dialog, "Invalid date format", "Error", JOptionPane.ERROR_MESSAGE);
+            String dateStr = datePicker.getDateString();
+            String startTimeStr = startTimePicker.getTimeString();
+            String endTimeStr = endTimePicker.getTimeString();
+
+            LocalDate newDate = InputValidator.parseAndValidateDate(dateStr);
+            LocalTime newStartTime = InputValidator.parseAndValidateTime(startTimeStr);
+            LocalTime newEndTime = InputValidator.parseAndValidateTime(endTimeStr);
+
+            if (newDate == null || newStartTime == null || newEndTime == null) {
+                JOptionPane.showMessageDialog(dialog, "Invalid date or time", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
-            LocalTime startTime = InputValidator.parseAndValidateTime(startTimeStr);
-            if (startTime == null) {
-                JOptionPane.showMessageDialog(dialog, "Invalid start time format", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            LocalTime endTime = InputValidator.parseAndValidateTime(endTimeStr);
-            if (endTime == null) {
-                JOptionPane.showMessageDialog(dialog, "Invalid end time format", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            if (!endTime.isAfter(startTime)) {
-                JOptionPane.showMessageDialog(dialog, "End time must be after start time", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            if (appointmentManager.updateAppointment(appointmentId, date, startTime, endTime, reason, notes)) {
-                JOptionPane.showMessageDialog(dialog, "Appointment updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                refreshTable();
+
+            if (appointmentManager.updateAppointment(appointmentId, newDate, newStartTime, newEndTime, null, null)) {
+                JOptionPane.showMessageDialog(dialog, "Appointment updated successfully!",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
                 dialog.dispose();
+                refreshTable();
             } else {
-                JOptionPane.showMessageDialog(dialog, "Failed to update appointment", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Failed to update appointment",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
-        
-        cancelButton.addActionListener(e -> dialog.dispose());
-        
-        JPanel buttonPanel = new JPanel();
+
+        cancelBtn.addActionListener(e -> dialog.dispose());
+
         buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
-        
-        dialog.add(buttonPanel);
+        buttonPanel.add(cancelBtn);
+
+        dialog.setLayout(new BorderLayout());
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
-    
+
     private void confirmAppointment() {
         int selectedRow = appointmentTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an appointment", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select an appointment to confirm",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         int appointmentId = (int) tableModel.getValueAt(selectedRow, 0);
-        
+
         if (appointmentManager.confirmAppointment(appointmentId)) {
-            JOptionPane.showMessageDialog(this, "Appointment confirmed successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Appointment confirmed successfully!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
             refreshTable();
         } else {
-            JOptionPane.showMessageDialog(this, "Failed to confirm appointment", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to confirm appointment",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
-    private void completeAppointment() {
+
+    private void markInProgress() {
         int selectedRow = appointmentTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an appointment", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select an appointment",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         int appointmentId = (int) tableModel.getValueAt(selectedRow, 0);
-        
-        String notes = JOptionPane.showInputDialog(this, "Enter completion notes (optional):");
-        
-        if (appointmentManager.completeAppointment(appointmentId, notes)) {
-            JOptionPane.showMessageDialog(this, "Appointment completed successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+        if (appointmentManager.markInProgress(appointmentId)) {
+            JOptionPane.showMessageDialog(this, "Appointment marked as IN_PROGRESS!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
             refreshTable();
         } else {
-            JOptionPane.showMessageDialog(this, "Failed to complete appointment", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to update appointment status",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+
+    private void markCompleted() {
+        int selectedRow = appointmentTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an appointment",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int appointmentId = (int) tableModel.getValueAt(selectedRow, 0);
+
+        if (appointmentManager.markCompleted(appointmentId)) {
+            JOptionPane.showMessageDialog(this, "Appointment marked as COMPLETED!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+            refreshTable();
+        } else {
+            JOptionPane.showMessageDialog(this, "Failed to update appointment status",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void markNoShow() {
+        int selectedRow = appointmentTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an appointment",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int appointmentId = (int) tableModel.getValueAt(selectedRow, 0);
+
+        if (appointmentManager.markNoShow(appointmentId)) {
+            JOptionPane.showMessageDialog(this, "Appointment marked as NO_SHOW!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+            refreshTable();
+        } else {
+            JOptionPane.showMessageDialog(this, "Failed to update appointment status",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void cancelAppointment() {
         int selectedRow = appointmentTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an appointment", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select an appointment to cancel",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         int appointmentId = (int) tableModel.getValueAt(selectedRow, 0);
-        
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to cancel this appointment?", 
-            "Confirm Cancel", 
-            JOptionPane.YES_NO_OPTION);
-        
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to cancel this appointment?",
+                "Confirm Cancellation",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
         if (confirm == JOptionPane.YES_OPTION) {
             if (appointmentManager.cancelAppointment(appointmentId)) {
-                JOptionPane.showMessageDialog(this, "Appointment cancelled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Appointment cancelled successfully!",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
                 refreshTable();
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to cancel appointment", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to cancel appointment",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
-    
-    private void exportAppointments() {
-        List<Appointment> appointments = appointmentManager.getAllAppointments();
-        if (appointments.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No appointments to export", "Info", JOptionPane.INFORMATION_MESSAGE);
+
+    private void deleteAppointment() {
+        int selectedRow = appointmentTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an appointment to delete",
+                    "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
-        try {
-            String fileName = CsvExporter.exportAppointments(appointments);
-            JOptionPane.showMessageDialog(this, 
-                "Appointments exported successfully!\nFile: " + fileName, 
-                "Export Success", 
-                JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                "Failed to export appointments: " + e.getMessage(), 
-                "Export Error", 
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    private void importAppointments() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Select CSV file to import");
-        fileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
-        
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            
-            CsvImporter.ImportResult importResult = CsvImporter.importAppointments(
-                selectedFile.getAbsolutePath(), appointmentManager, patientManager, doctorManager
-            );
-            
-            StringBuilder message = new StringBuilder();
-            message.append("Import completed!\n");
-            message.append("Success: ").append(importResult.successCount).append("\n");
-            message.append("Errors: ").append(importResult.errorCount).append("\n");
-            
-            if (!importResult.errors.isEmpty()) {
-                message.append("\nError details:\n");
-                for (String error : importResult.errors) {
-                    message.append("- ").append(error).append("\n");
-                }
+
+        int appointmentId = (int) tableModel.getValueAt(selectedRow, 0);
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to delete this appointment?",
+                "Confirm Deletion",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (appointmentManager.deleteAppointment(appointmentId)) {
+                JOptionPane.showMessageDialog(this, "Appointment deleted successfully!",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
+                refreshTable();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to delete appointment",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
-            
-            JOptionPane.showMessageDialog(this, message.toString(), 
-                "Import Results", 
-                importResult.errorCount > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
-            
-            refreshTable();
         }
     }
 }
