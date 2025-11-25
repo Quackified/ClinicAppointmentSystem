@@ -40,14 +40,10 @@ public class DoctorPanel extends JPanel {
         setLayout(new BorderLayout(0, 0));
         setBackground(UIConstants.GRAY_50);
 
-        // Breadcrumb navigation
-        BreadcrumbPanel breadcrumb = new BreadcrumbPanel("Dashboard", "Doctors");
-        add(breadcrumb, BorderLayout.NORTH);
-
         // Main content panel
         JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
         contentPanel.setBackground(UIConstants.GRAY_50);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Top toolbar
         JPanel toolbarPanel = createToolbar();
@@ -78,6 +74,9 @@ public class DoctorPanel extends JPanel {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         searchPanel.setBackground(Color.WHITE);
 
+        JLabel searchLabel = new JLabel("Search by:");
+        searchLabel.setFont(UIConstants.FONT_LABEL);
+
         searchField = new JTextField(20);
         searchField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter ID");
         searchField.setPreferredSize(new Dimension(250, 35));
@@ -89,6 +88,7 @@ public class DoctorPanel extends JPanel {
         searchButton.setPreferredSize(new Dimension(80, 35));
         searchButton.addActionListener(e -> performSearch());
 
+        searchPanel.add(searchLabel);
         searchPanel.add(searchField);
         searchPanel.add(searchTypeCombo);
         searchPanel.add(searchButton);
@@ -328,7 +328,8 @@ public class DoctorPanel extends JPanel {
 
     private void showAddDoctorDialog() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add New Doctor", true);
-        dialog.setSize(550, 650);
+        dialog.setSize(500, 500);
+        dialog.setResizable(false);
         dialog.setLocationRelativeTo(this);
 
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -367,8 +368,10 @@ public class DoctorPanel extends JPanel {
 
         // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        StyledButton saveButton = StyledButton.createPrimary("Add Doctor");
+        StyledButton saveButton = StyledButton.createPrimary("Create");
+        saveButton.setPreferredSize(new Dimension(90, 30));
         JButton cancelButton = new JButton("Cancel");
+        cancelButton.setPreferredSize(new Dimension(90, 30));
 
         saveButton.addActionListener(e -> {
             String name = nameField.getText().trim();
@@ -433,6 +436,7 @@ public class DoctorPanel extends JPanel {
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Edit Doctor", true);
         dialog.setSize(550, 650);
+        dialog.setResizable(false);
         dialog.setLocationRelativeTo(this);
 
         JPanel formPanel = new JPanel(new GridBagLayout());

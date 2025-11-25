@@ -13,7 +13,7 @@ public class UIConstants {
 
     // ==================== COLOR PALETTE ====================
     // Primary Colors (Blue theme from React UI)
-    public static final Color PRIMARY_BLUE = new Color(37, 99, 235); // #2563eb
+    public static final Color PRIMARY_BLUE = new Color(37, 99, 235); // rgba(37, 99, 235, 1)
     public static final Color PRIMARY_BLUE_LIGHT = new Color(219, 234, 254); // #dbeafe
     public static final Color PRIMARY_BLUE_DARK = new Color(30, 64, 175); // #1e40af
     public static final Color PRIMARY_BLUE_HOVER = new Color(29, 78, 216); // #1d4ed8

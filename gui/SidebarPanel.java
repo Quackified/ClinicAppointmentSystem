@@ -21,14 +21,19 @@ public class SidebarPanel extends JPanel {
         return new ImageIcon(img);
     }
 
-    ImageIcon dashboardIconDark = scaleIcon("/clinicapp/resources/icons/dashboard-32-1.png", 24, 24);
-    ImageIcon dashboardIconLight = scaleIcon("/clinicapp/resources/icons/dashboard-32-2.png", 24, 24);
+    ImageIcon appIcon = scaleIcon("/clinicapp/resources/icons/clinic-logo-1.png", 32, 32);
+    ImageIcon avatarIcon = scaleIcon("/clinicapp/resources/icons/avatar-32-1.png", 32, 32);
+
+    ImageIcon dashboardIconDark = scaleIcon("/clinicapp/resources/icons/dashboard-24-1.png", 24, 24);
+    ImageIcon dashboardIconLight = scaleIcon("/clinicapp/resources/icons/dashboard-24-2.png", 24, 24);
     ImageIcon patientsIconDark = scaleIcon("/clinicapp/resources/icons/person-32-1.png", 24, 24);
     ImageIcon patientsIconLight = scaleIcon("/clinicapp/resources/icons/person-32-2.png", 24, 24);
-    ImageIcon doctorsIconDark = scaleIcon("/clinicapp/resources/icons/hospital-32-1.png", 24, 24);
-    ImageIcon doctorsIconLight = scaleIcon("/clinicapp/resources/icons/hospital-32-2.png", 24, 24);
+    ImageIcon doctorsIconDark = scaleIcon("/clinicapp/resources/icons/hospital-32-3.png", 24, 24);
+    ImageIcon doctorsIconLight = scaleIcon("/clinicapp/resources/icons/hospital-32-4.png", 24, 24);
     ImageIcon appointmentsIconDark = scaleIcon("/clinicapp/resources/icons/date-32-1.png", 24, 24);
     ImageIcon appointmentsIconLight = scaleIcon("/clinicapp/resources/icons/date-32-2.png", 24, 24);
+    ImageIcon queueIconDark = scaleIcon("/clinicapp/resources/icons/person-32-1.png", 24, 24);
+    ImageIcon queueIconLight = scaleIcon("/clinicapp/resources/icons/person-32-2.png", 24, 24);
 
     public interface NavigationCallback {
         void onNavigate(String page);
@@ -48,15 +53,32 @@ public class SidebarPanel extends JPanel {
         setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIConstants.GRAY_200));
 
         // Logo/Title Section
-        JPanel logoPanel = new JPanel(new BorderLayout());
-        logoPanel.setBackground(Color.WHITE);
+        JPanel logoPanel = new JPanel(new BorderLayout(10, 0));
+        logoPanel.setBackground(UIConstants.PRIMARY_BLUE);
         logoPanel.setBorder(UIConstants.createPaddingBorder(20));
 
-        JLabel logoLabel = new JLabel("Clinic System");
-        logoLabel.setFont(UIConstants.FONT_HEADING);
-        logoLabel.setForeground(UIConstants.PRIMARY_BLUE);
+        // Logo icon on the left
+        JLabel logoIcon = new JLabel(appIcon);
+        logoIcon.setVerticalAlignment(SwingConstants.CENTER);
 
-        logoPanel.add(logoLabel, BorderLayout.CENTER);
+        // Text panel on the right
+        JPanel textPanel = new JPanel();
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+        textPanel.setBackground(UIConstants.PRIMARY_BLUE);
+
+        JLabel logoTitle = new JLabel("Pinnacle Medical");
+        logoTitle.setFont(UIConstants.FONT_LABEL_BOLD);
+        logoTitle.setForeground(UIConstants.WHITE);
+
+        JLabel logoLabel = new JLabel("Appointment System");
+        logoLabel.setFont(UIConstants.FONT_LABEL);
+        logoLabel.setForeground(UIConstants.WHITE);
+
+        textPanel.add(logoTitle);
+        textPanel.add(logoLabel);
+
+        logoPanel.add(logoIcon, BorderLayout.WEST);
+        logoPanel.add(textPanel, BorderLayout.CENTER);
 
         // Menu Panel
         menuPanel = new JPanel();
@@ -69,6 +91,7 @@ public class SidebarPanel extends JPanel {
         addMenuItem("Patients", "patients", patientsIconDark, patientsIconLight);
         addMenuItem("Doctors", "doctors", doctorsIconDark, doctorsIconLight);
         addMenuItem("Appointments", "appointments", appointmentsIconDark, appointmentsIconLight);
+        addMenuItem("Walk-in Queue", "walkinqueue", queueIconDark, queueIconLight);
 
         JScrollPane scrollPane = new JScrollPane(menuPanel);
         scrollPane.setBorder(null);
@@ -79,8 +102,7 @@ public class SidebarPanel extends JPanel {
         userPanel.setBackground(UIConstants.GRAY_50);
         userPanel.setBorder(UIConstants.createPaddingBorder(15));
 
-        JLabel userIcon = new JLabel("[U]");
-        userIcon.setFont(new Font("Arial", Font.BOLD, 16));
+        JLabel userIcon = new JLabel(avatarIcon);
 
         JPanel userInfo = new JPanel();
         userInfo.setLayout(new BoxLayout(userInfo, BoxLayout.Y_AXIS));
@@ -178,7 +200,6 @@ public class SidebarPanel extends JPanel {
                 public void mouseEntered(MouseEvent e) {
                     if (!button.getBackground().equals(UIConstants.PRIMARY_BLUE)) {
                         button.setBackground(UIConstants.PRIMARY_BLUE_LIGHT);
-                        button.setForeground(UIConstants.PRIMARY_BLUE);
                     }
                 }
 

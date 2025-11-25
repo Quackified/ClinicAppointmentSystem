@@ -23,6 +23,7 @@ public class AppointmentPanel extends JPanel {
     private DoctorManager doctorManager;
     private JTable appointmentTable;
     private DefaultTableModel tableModel;
+    private JComboBox<String> sortCombo;
 
     public AppointmentPanel(AppointmentManager appointmentManager,
             PatientManager patientManager,
@@ -37,14 +38,10 @@ public class AppointmentPanel extends JPanel {
         setLayout(new BorderLayout(0, 0));
         setBackground(UIConstants.GRAY_50);
 
-        // Breadcrumb navigation
-        BreadcrumbPanel breadcrumb = new BreadcrumbPanel("Dashboard", "Appointments");
-        add(breadcrumb, BorderLayout.NORTH);
-
         // Main content panel
         JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
         contentPanel.setBackground(UIConstants.GRAY_50);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Top toolbar
         JPanel toolbarPanel = createToolbar();
@@ -71,11 +68,25 @@ public class AppointmentPanel extends JPanel {
                 UIConstants.createCardBorder(),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)));
 
+        // Left side - Sort
+        JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        sortPanel.setBackground(Color.WHITE);
+
+        JLabel sortLabel = new JLabel("Sort by:");
+        sortLabel.setFont(UIConstants.FONT_LABEL);
+
+        sortCombo = new JComboBox<>(new String[] { "Time", "Doctor", "Patient" });
+        sortCombo.setPreferredSize(new Dimension(120, 35));
+        sortCombo.addActionListener(e -> refreshTable());
+
+        sortPanel.add(sortLabel);
+        sortPanel.add(sortCombo);
+
         // Right side - Actions
         JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionsPanel.setBackground(Color.WHITE);
 
-        StyledButton scheduleButton = StyledButton.createPrimary("Schedule");
+        StyledButton scheduleButton = StyledButton.createPrimary("Add Schedule");
         scheduleButton.setPreferredSize(new Dimension(120, 35));
         scheduleButton.addActionListener(e -> showScheduleDialog());
 
@@ -83,9 +94,15 @@ public class AppointmentPanel extends JPanel {
         refreshButton.setPreferredSize(new Dimension(100, 35));
         refreshButton.addActionListener(e -> refreshTable());
 
+        StyledButton reportButton = StyledButton.createPrimary("Daily Report");
+        reportButton.setPreferredSize(new Dimension(120, 35));
+        reportButton.addActionListener(e -> showDailyReportDialog());
+
         actionsPanel.add(scheduleButton);
         actionsPanel.add(refreshButton);
+        actionsPanel.add(reportButton);
 
+        toolbar.add(sortPanel, BorderLayout.WEST);
         toolbar.add(actionsPanel, BorderLayout.EAST);
 
         return toolbar;
@@ -141,8 +158,20 @@ public class AppointmentPanel extends JPanel {
         deleteButton.setPreferredSize(new Dimension(100, 35));
         deleteButton.addActionListener(e -> deleteAppointment());
 
+        // Undo button - uses Stack
+        JButton undoButton = new JButton("Undo Last");
+        undoButton.setPreferredSize(new Dimension(100, 35));
+        undoButton.addActionListener(e -> undoLastAction());
+
+        // View History button
+        JButton historyButton = new JButton("View History");
+        historyButton.setPreferredSize(new Dimension(120, 35));
+        historyButton.addActionListener(e -> showAppointmentHistory());
+
         leftButtons.add(rescheduleButton);
         leftButtons.add(deleteButton);
+        leftButtons.add(undoButton);
+        leftButtons.add(historyButton);
 
         // Right side - Status transition buttons
         JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 10));
@@ -173,7 +202,6 @@ public class AppointmentPanel extends JPanel {
         rightButtons.add(completeButton);
         rightButtons.add(noShowButton);
         rightButtons.add(cancelButton);
-
         panel.add(leftButtons, BorderLayout.WEST);
         panel.add(rightButtons, BorderLayout.EAST);
 
@@ -183,6 +211,11 @@ public class AppointmentPanel extends JPanel {
     private void refreshTable() {
         tableModel.setRowCount(0);
         List<Appointment> appointments = appointmentManager.getAllAppointments();
+
+        // Sort appointments based on selected criteria
+        String sortBy = sortCombo != null ? (String) sortCombo.getSelectedItem() : "Time";
+        sortAppointments(appointments, sortBy);
+
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
         for (Appointment apt : appointments) {
@@ -202,9 +235,45 @@ public class AppointmentPanel extends JPanel {
         }
     }
 
+    private void sortAppointments(List<Appointment> appointments, String sortBy) {
+        switch (sortBy) {
+            case "Time":
+                appointments.sort((a1, a2) -> {
+                    int dateCompare = a1.getAppointmentDate().compareTo(a2.getAppointmentDate());
+                    if (dateCompare != 0)
+                        return dateCompare;
+                    return a1.getStartTime().compareTo(a2.getStartTime());
+                });
+                break;
+            case "Doctor":
+                appointments.sort((a1, a2) -> {
+                    int doctorCompare = a1.getDoctor().getName().compareToIgnoreCase(a2.getDoctor().getName());
+                    if (doctorCompare != 0)
+                        return doctorCompare;
+                    int dateCompare = a1.getAppointmentDate().compareTo(a2.getAppointmentDate());
+                    if (dateCompare != 0)
+                        return dateCompare;
+                    return a1.getStartTime().compareTo(a2.getStartTime());
+                });
+                break;
+            case "Patient":
+                appointments.sort((a1, a2) -> {
+                    int patientCompare = a1.getPatient().getName().compareToIgnoreCase(a2.getPatient().getName());
+                    if (patientCompare != 0)
+                        return patientCompare;
+                    int dateCompare = a1.getAppointmentDate().compareTo(a2.getAppointmentDate());
+                    if (dateCompare != 0)
+                        return dateCompare;
+                    return a1.getStartTime().compareTo(a2.getStartTime());
+                });
+                break;
+        }
+    }
+
     private void showScheduleDialog() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Schedule Appointment", true);
-        dialog.setSize(500, 550);
+        dialog.setSize(500, 450);
+        dialog.setResizable(false);
         dialog.setLocationRelativeTo(this);
 
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -243,8 +312,10 @@ public class AppointmentPanel extends JPanel {
 
         // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        StyledButton saveButton = StyledButton.createPrimary("Schedule");
+        StyledButton saveButton = StyledButton.createPrimary("Create");
+        saveButton.setPreferredSize(new Dimension(90, 30));
         JButton cancelBtn = new JButton("Cancel");
+        cancelBtn.setPreferredSize(new Dimension(90, 30));
 
         saveButton.addActionListener(e -> {
             if (patientCombo.getSelectedItem() == null || doctorCombo.getSelectedItem() == null) {
@@ -300,9 +371,11 @@ public class AppointmentPanel extends JPanel {
                 refreshTable();
                 dialog.dispose();
             } else {
-                JOptionPane.showMessageDialog(dialog, "Failed to schedule appointment. Doctor may have a conflict.",
+                JOptionPane.showMessageDialog(dialog,
+                        "Failed to schedule appointment. Doctor or patient may have a scheduling conflict.",
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
+
         });
 
         cancelBtn.addActionListener(e -> dialog.dispose());
@@ -376,6 +449,7 @@ public class AppointmentPanel extends JPanel {
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Reschedule Appointment", true);
         dialog.setSize(500, 400);
+        dialog.setResizable(false);
         dialog.setLocationRelativeTo(this);
 
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -571,5 +645,247 @@ public class AppointmentPanel extends JPanel {
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    /**
+     * Undo last appointment action using Stack
+     */
+    private void undoLastAction() {
+        if (!appointmentManager.canUndo()) {
+            JOptionPane.showMessageDialog(this, "There's no history to undo", "Undo", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to undo the last action?",
+                "Confirm Undo", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (appointmentManager.undoLastAction()) {
+                JOptionPane.showMessageDialog(this, "Last action undone successfully!", "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+                refreshTable();
+            }
+        }
+    }
+
+    /**
+     * Show appointment history dialog
+     */
+    private void showAppointmentHistory() {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Appointment History", true);
+        dialog.setSize(900, 500);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // Date range
+        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        datePanel.add(new JLabel("From:"));
+        DatePicker startPicker = new DatePicker();
+        startPicker.setDate(LocalDate.now().minusMonths(1).toString());
+        datePanel.add(startPicker);
+        datePanel.add(new JLabel("To:"));
+        DatePicker endPicker = new DatePicker();
+        endPicker.setDate(LocalDate.now().toString());
+        datePanel.add(endPicker);
+        mainPanel.add(datePanel, BorderLayout.NORTH);
+
+        // Table
+        String[] cols = { "ID", "Date", "Time", "Patient", "Doctor", "Status", "Reason" };
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        JTable table = new JTable(model);
+        table.setRowHeight(30);
+        table.setFont(UIConstants.FONT_BODY);
+        table.getTableHeader().setFont(UIConstants.FONT_LABEL);
+        mainPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Load data
+        List<Appointment> history = appointmentManager.getAppointmentHistory(LocalDate.now().minusMonths(1),
+                LocalDate.now());
+        
+        // Filter for historical statuses only
+        history = history.stream()
+            .filter(apt -> apt.getStatus() == Appointment.AppointmentStatus.COMPLETED ||
+                apt.getStatus() == Appointment.AppointmentStatus.CANCELLED ||
+                apt.getStatus() == Appointment.AppointmentStatus.NO_SHOW)
+            .collect(java.util.stream.Collectors.toList());
+        
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
+        for (Appointment apt : history) {
+            model.addRow(new Object[] { apt.getId(), apt.getAppointmentDate(),
+                    apt.getStartTime().format(fmt) + "-" + apt.getEndTime().format(fmt),
+                    apt.getPatient().getName(), "Dr. " + apt.getDoctor().getName(),
+                    apt.getStatus(), apt.getReason() });
+        }
+
+        JButton closeBtn = new JButton("Close");
+        closeBtn.addActionListener(e -> dialog.dispose());
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnPanel.add(closeBtn);
+        mainPanel.add(btnPanel, BorderLayout.SOUTH);
+
+        dialog.add(mainPanel);
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Generate and display daily report of appointments
+     */
+    private void showDailyReportDialog() {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+                "Daily Appointment Report", true);
+        dialog.setSize(900, 600);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // Date selection
+        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        datePanel.add(new JLabel("Select Date:"));
+        DatePicker datePicker = new DatePicker();
+        datePicker.setDate(LocalDate.now().toString());
+        datePanel.add(datePicker);
+
+        StyledButton generateButton = StyledButton.createPrimary("Generate Report");
+        generateButton.addActionListener(e -> {
+            LocalDate selectedDate = InputValidator.parseAndValidateDate(datePicker.getDateString());
+            if (selectedDate != null) {
+                updateDailyReport(dialog, selectedDate);
+            }
+        });
+        datePanel.add(generateButton);
+
+        mainPanel.add(datePanel, BorderLayout.NORTH);
+
+        // Report content area
+        JTextArea reportArea = new JTextArea();
+        reportArea.setEditable(false);
+        reportArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JScrollPane scrollPane = new JScrollPane(reportArea);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Generate initial report for today
+        generateDailyReport(reportArea, LocalDate.now());
+
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+
+        JButton exportButton = new JButton("Export to File");
+        exportButton.addActionListener(e -> {
+            exportDailyReport(reportArea.getText(), datePicker.getDateString());
+        });
+
+        JButton closeButton = new JButton("Close");
+        closeButton.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(exportButton);
+        buttonPanel.add(closeButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.add(mainPanel);
+        dialog.setVisible(true);
+    }
+
+    private void updateDailyReport(JDialog dialog, LocalDate date) {
+        // Find the text area in the dialog
+        JTextArea reportArea = findTextAreaInContainer(dialog.getContentPane());
+        if (reportArea != null) {
+            generateDailyReport(reportArea, date);
+        }
+    }
+
+    private void generateDailyReport(JTextArea reportArea, LocalDate date) {
+        List<Appointment> appointments = appointmentManager.getAppointmentsByDate(date);
+
+        StringBuilder report = new StringBuilder();
+        report.append("DAILY APPOINTMENT REPORT\n");
+        report.append("Date: ").append(date).append("\n");
+        report.append("Generated: ").append(LocalDate.now()).append(" at ")
+                .append(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))).append("\n\n");
+
+        if (appointments.isEmpty()) {
+            report.append("No appointments scheduled for this date.\n");
+        } else {
+            report.append("Total Appointments: ").append(appointments.size()).append("\n\n");
+
+            // Group by status
+            var statusCount = appointments.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                    Appointment::getStatus, 
+                    java.util.stream.Collectors.counting()));
+
+            report.append("Summary by Status:\n");
+            statusCount.forEach((status, count) -> report.append(String.format("  %s: %d\n", status, count)));
+            report.append("\n");
+
+            // Detailed appointments
+            report.append("Detailed Appointments:\n\n");
+
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+            for (int i = 0; i < appointments.size(); i++) {
+                Appointment apt = appointments.get(i);
+                report.append(String.format("%d. Appointment ID: %d\n", i + 1, apt.getId()));
+                report.append(String.format("   Time: %s - %s\n",
+                        apt.getStartTime().format(timeFormatter),
+                        apt.getEndTime().format(timeFormatter)));
+                report.append(String.format("   Patient: %s (ID: %d)\n",
+                        apt.getPatient().getName(), apt.getPatient().getId()));
+                report.append(String.format("   Doctor: Dr. %s (%s)\n",
+                        apt.getDoctor().getName(), apt.getDoctor().getSpecialization()));
+                report.append(String.format("   Reason: %s\n", apt.getReason()));
+                report.append(String.format("   Status: %s\n\n", apt.getStatus()));
+            }
+
+            report.append("END OF REPORT\n");
+        }
+
+        reportArea.setText(report.toString());
+        reportArea.setCaretPosition(0);
+    }
+
+    private void exportDailyReport(String reportContent, String dateStr) {
+        try {
+            String filename = "daily_report_" + dateStr + ".txt";
+            java.nio.file.Path exportPath = java.nio.file.Paths.get("exports", filename);
+
+            // Create exports directory if it doesn't exist
+            java.nio.file.Files.createDirectories(exportPath.getParent());
+
+            // Write report to file
+            java.nio.file.Files.writeString(exportPath, reportContent);
+
+            JOptionPane.showMessageDialog(this,
+                    "Report exported successfully to:\n" + exportPath.toAbsolutePath(),
+                    "Export Successful",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to export report: " + e.getMessage(),
+                    "Export Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private JTextArea findTextAreaInContainer(java.awt.Container container) {
+        for (java.awt.Component comp : container.getComponents()) {
+            if (comp instanceof JScrollPane) {
+                java.awt.Component view = ((JScrollPane) comp).getViewport().getView();
+                if (view instanceof JTextArea) {
+                    return (JTextArea) view;
+                }
+            } else if (comp instanceof java.awt.Container) {
+                JTextArea textArea = findTextAreaInContainer((java.awt.Container) comp);
+                if (textArea != null)
+                    return textArea;
+            }
+        }
+        return null;
     }
 }

@@ -19,6 +19,8 @@ public class LoginFrame extends JFrame {
     private LoginCallback callback;
     private JLabel errorLabel;
 
+    ImageIcon appIcon = new ImageIcon(getClass().getResource("/clinicapp/resources/icons/clinic-logo.png"));
+
     ImageIcon closedEyeIcon = new ImageIcon(getClass().getResource("/clinicapp/resources/icons/closed-eye.png"));
     ImageIcon openEyeIcon = new ImageIcon(getClass().getResource("/clinicapp/resources/icons/opened-eye.png"));
 
@@ -37,6 +39,9 @@ public class LoginFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
+        
+        // Set app icon for window and taskbar
+        setIconImage(appIcon.getImage());
 
         // Main panel with padding
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -51,6 +56,10 @@ public class LoginFrame extends JFrame {
         contentPanel.setMaximumSize(new Dimension(400, 400));
 
         // Logo/Title
+        JLabel appIconLabel = new JLabel(appIcon);
+        appIconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        appIconLabel.setBorder(UIConstants.createPaddingBorder(0));
+
         JLabel titleLabel = new JLabel("Pinnacle Medical Services");
         titleLabel.setFont(UIConstants.FONT_TITLE);
         titleLabel.setForeground(UIConstants.PRIMARY_BLUE);
@@ -137,9 +146,9 @@ public class LoginFrame extends JFrame {
         errorLabel.setVisible(true); // hidden by default
 
         // Add the structure objects
-        formPanel.add(Box.createVerticalStrut(0));
-        formPanel.add(errorLabel);
         formPanel.add(Box.createVerticalStrut(10));
+        formPanel.add(errorLabel);
+        formPanel.add(Box.createVerticalStrut(5));
         formPanel.add(emailLabel);
         formPanel.add(Box.createVerticalStrut(5));
         formPanel.add(emailField);
@@ -152,6 +161,7 @@ public class LoginFrame extends JFrame {
         StyledButton loginButton = StyledButton.createPrimary("Login");
         loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         loginButton.setMaximumSize(new Dimension(350, UIConstants.BUTTON_HEIGHT));
+        loginButton.setBorder(UIConstants.createPaddingBorder(5));
         loginButton.addActionListener(e -> handleLogin());
 
         // Add Enter key support
@@ -163,17 +173,19 @@ public class LoginFrame extends JFrame {
         hintLabel.setForeground(UIConstants.GRAY_500);
 
         // Assemble content panel
-        contentPanel.add(Box.createVerticalStrut(30));
+        contentPanel.add(Box.createVerticalStrut(0));
+        contentPanel.add(appIconLabel);
+        contentPanel.add(Box.createVerticalStrut(10));
         contentPanel.add(titleLabel);
         contentPanel.add(Box.createVerticalStrut(5));
         contentPanel.add(subtitleLabel);
-        contentPanel.add(Box.createVerticalStrut(40));
+        contentPanel.add(Box.createVerticalStrut(0));
         contentPanel.add(formPanel);
         contentPanel.add(Box.createVerticalStrut(20));
         contentPanel.add(loginButton);
         contentPanel.add(Box.createVerticalStrut(15));
         contentPanel.add(hintLabel);
-        contentPanel.add(Box.createVerticalStrut(30));
+        contentPanel.add(Box.createVerticalStrut(10));
 
         // Center the content panel
         JPanel wrapperPanel = new JPanel(new GridBagLayout());
@@ -220,7 +232,7 @@ public class LoginFrame extends JFrame {
                 callback.onLoginSuccess(email);
             }
         } else {
-            errorLabel.setText("Invalid Credentials. Try: admin / admin");
+            errorLabel.setText("Invalid Email / Password");
             errorLabel.setVisible(true);
 
             emailField.setBackground(new Color(255, 230, 230)); // light red

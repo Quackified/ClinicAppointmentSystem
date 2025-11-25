@@ -53,7 +53,7 @@ public class DemoDataInitializer {
                 // Create demo doctors
                 Doctor doctor1 = doctorManager.addDoctor(
                                 "Sarah Lee",
-                                "Cardiology",
+                                "Cardiologist",
                                 "1112223333",
                                 "dr.lee@clinic.com",
                                 Arrays.asList("Monday", "Wednesday", "Friday"),
@@ -62,7 +62,7 @@ public class DemoDataInitializer {
 
                 Doctor doctor2 = doctorManager.addDoctor(
                                 "Michael Kim",
-                                "Dermatology",
+                                "Dermatologist",
                                 "4445556666",
                                 "dr.kim@clinic.com",
                                 Arrays.asList("Tuesday", "Thursday", "Saturday"),
@@ -71,7 +71,7 @@ public class DemoDataInitializer {
 
                 Doctor doctor3 = doctorManager.addDoctor(
                                 "Emily Chen",
-                                "Pediatrics",
+                                "Pediatrician",
                                 "7778889999",
                                 "dr.chen@clinic.com",
                                 Arrays.asList("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"),

@@ -24,6 +24,7 @@ public class MainFrame extends JFrame {
     private DoctorPanel doctorPanel;
     private AppointmentPanel appointmentPanel;
     private SchedulePanel schedulePanel;
+    private WalkInQueuePanel walkInQueuePanel;
 
     public MainFrame(PatientManager patientManager, DoctorManager doctorManager,
             AppointmentManager appointmentManager, String username) {
@@ -39,6 +40,11 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1400, 800);
         setLocationRelativeTo(null);
+        
+        // Set app icon for window and taskbar
+        ImageIcon appIcon = new ImageIcon(getClass().getResource("/clinicapp/resources/icons/clinic-logo.png"));
+        setIconImage(appIcon.getImage());
+        
         // Main layout: Sidebar on left, content on right
         setLayout(new BorderLayout());
         // Initialize sidebar with navigation callback
@@ -63,12 +69,13 @@ public class MainFrame extends JFrame {
             public void onNavigate(String page) {
                 switchToPage(page);
             }
-        }, appointmentManager);
+        }, appointmentManager, currentUser);
 
         patientPanel = new PatientPanel(patientManager);
         doctorPanel = new DoctorPanel(doctorManager);
         appointmentPanel = new AppointmentPanel(appointmentManager, patientManager, doctorManager);
         schedulePanel = new SchedulePanel(appointmentManager);
+        walkInQueuePanel = new WalkInQueuePanel(appointmentManager, patientManager, doctorManager);
 
         // Update dashboard stats
         dashboardPanel.updateStats(
@@ -81,6 +88,7 @@ public class MainFrame extends JFrame {
         contentPanel.add(doctorPanel, "doctors");
         contentPanel.add(appointmentPanel, "appointments");
         contentPanel.add(schedulePanel, "schedule");
+        contentPanel.add(walkInQueuePanel, "walkinqueue");
         // Add components to frame
         add(sidebarPanel, BorderLayout.WEST);
         add(contentPanel, BorderLayout.CENTER);

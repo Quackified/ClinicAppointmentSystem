@@ -23,8 +23,11 @@ public class AppointmentManager {
     // Stack to support undo functionality - stores last action details
     private final Stack<AppointmentAction> undoStack;
 
-    // Queue for processing appointments in order (FIFO)
+    // Queue for processing regular appointments in order (FIFO)
     private final Queue<Appointment> appointmentQueue;
+    
+    // Separate queue for walk-in appointments (FIFO)
+    private final Queue<Appointment> walkInQueue;
 
     // Reference to managers for validation
     private final PatientManager patientManager;
@@ -35,7 +38,7 @@ public class AppointmentManager {
      */
     private static class AppointmentAction {
         enum ActionType {
-            ADD, UPDATE, CANCEL, COMPLETE
+            ADD, UPDATE, CANCEL, COMPLETE, DELETE
         }
 
         ActionType type;
@@ -56,6 +59,7 @@ public class AppointmentManager {
         this.appointments = new HashMap<>();
         this.undoStack = new Stack<>();
         this.appointmentQueue = new LinkedList<>();
+        this.walkInQueue = new LinkedList<>();
         this.patientManager = patientManager;
         this.doctorManager = doctorManager;
     }
@@ -133,9 +137,10 @@ public class AppointmentManager {
 
     /**
      * Check if two time ranges overlap.
+     * Adjacent time slots (e.g., 8:00-9:00 and 9:00-10:00) are NOT considered overlapping.
      */
     private boolean timesOverlap(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
-        return !start1.isAfter(end2) && !end1.isBefore(start2);
+        return start1.isBefore(end2) && start2.isBefore(end1);
     }
 
     /**
@@ -242,7 +247,11 @@ public class AppointmentManager {
     public boolean confirmAppointment(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment != null && appointment.getStatus() == AppointmentStatus.SCHEDULED) {
+            Appointment previousState = cloneAppointment(appointment);
             appointment.setStatus(AppointmentStatus.CONFIRMED);
+            
+            undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
+                    appointment, previousState));
             return true;
         }
         return false;
@@ -254,7 +263,11 @@ public class AppointmentManager {
     public boolean markInProgress(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment != null && appointment.getStatus() == AppointmentStatus.CONFIRMED) {
+            Appointment previousState = cloneAppointment(appointment);
             appointment.setStatus(AppointmentStatus.IN_PROGRESS);
+            
+            undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
+                    appointment, previousState));
             return true;
         }
         return false;
@@ -266,7 +279,11 @@ public class AppointmentManager {
     public boolean markCompleted(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment != null && appointment.getStatus() == AppointmentStatus.IN_PROGRESS) {
+            Appointment previousState = cloneAppointment(appointment);
             appointment.setStatus(AppointmentStatus.COMPLETED);
+            
+            undoStack.push(new AppointmentAction(AppointmentAction.ActionType.COMPLETE,
+                    appointment, previousState));
             return true;
         }
         return false;
@@ -383,6 +400,7 @@ public class AppointmentManager {
                 // Remove the appointment that was added
                 appointments.remove(action.appointment.getId());
                 appointmentQueue.remove(action.appointment);
+                walkInQueue.remove(action.appointment);
                 break;
 
             case UPDATE:
@@ -400,6 +418,22 @@ public class AppointmentManager {
                             if (!appointmentQueue.contains(current)) {
                                 appointmentQueue.offer(current);
                             }
+                        }
+                    }
+                }
+                break;
+            
+            case DELETE:
+                // Restore deleted appointment
+                if (action.previousState != null) {
+                    // Re-add to appointments map
+                    appointments.put(action.previousState.getId(), action.previousState);
+                    
+                    // Re-add to appropriate queue based on status
+                    if (action.previousState.getStatus() == AppointmentStatus.SCHEDULED ||
+                            action.previousState.getStatus() == AppointmentStatus.CONFIRMED) {
+                        if (!appointmentQueue.contains(action.previousState)) {
+                            appointmentQueue.offer(action.previousState);
                         }
                     }
                 }
@@ -492,15 +526,28 @@ public class AppointmentManager {
 
     /**
      * Delete an appointment (for administrative purposes).
+     * Supports undo by saving previous state.
      */
     public boolean deleteAppointment(int id) {
-        Appointment removed = appointments.remove(id);
-        if (removed != null) {
-            appointmentQueue.remove(removed);
+        Appointment appointment = appointments.get(id);
+        if (appointment != null) {
+            // Save state for undo
+            Appointment previousState = cloneAppointment(appointment);
+            
+            // Remove from map and queues
+            appointments.remove(id);
+            appointmentQueue.remove(appointment);
+            walkInQueue.remove(appointment);
+            
+            // Push to undo stack so deletion can be undone
+            undoStack.push(new AppointmentAction(AppointmentAction.ActionType.DELETE,
+                    appointment, previousState));
+            
             return true;
         }
         return false;
     }
+
 
     /**
      * Get total appointment count.
@@ -517,5 +564,54 @@ public class AppointmentManager {
         return (int) appointments.values().stream()
                 .filter(apt -> apt.getAppointmentDate().equals(today))
                 .count();
+    }
+    
+    // ========== Walk-In Queue Methods ==========
+    
+    /**
+     * Add appointment to walk-in queue.
+     * This is separate from regular appointment queue.
+     */
+    public boolean addToWalkInQueue(Appointment appointment) {
+        if (appointment != null && appointments.containsKey(appointment.getId())) {
+            return walkInQueue.offer(appointment);
+        }
+        return false;
+    }
+    
+    /**
+     * Process next walk-in patient.
+     */
+    public Appointment processNextWalkIn() {
+        Appointment appointment = walkInQueue.poll();
+        if (appointment != null && appointments.containsKey(appointment.getId())) {
+            Appointment previousState = cloneAppointment(appointment);
+            appointment.setStatus(AppointmentStatus.IN_PROGRESS);
+            
+            undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
+                    appointment, previousState));
+        }
+        return appointment;
+    }
+    
+    /**
+     * Get walk-in queue size.
+     */
+    public int getWalkInQueueSize() {
+        return walkInQueue.size();
+    }
+    
+    /**
+     * View walk-in queue without removing entries.
+     */
+    public List<Appointment> viewWalkInQueue() {
+        return new ArrayList<>(walkInQueue);
+    }
+    
+    /**
+     * Remove appointment from walk-in queue.
+     */
+    public boolean removeFromWalkInQueue(Appointment appointment) {
+        return walkInQueue.remove(appointment);
     }
 }
