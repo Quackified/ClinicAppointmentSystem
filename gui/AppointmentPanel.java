@@ -908,7 +908,10 @@ public class AppointmentPanel extends JPanel {
 
         // Top panel - Doctor and Date selection
         JPanel selectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        selectionPanel.add(new JLabel("Doctor:"));
+
+        JLabel doctorLabel = new JLabel("Doctor:");
+        doctorLabel.setFont(UIConstants.FONT_LABEL);
+        selectionPanel.add(doctorLabel);
 
         JComboBox<String> doctorCombo = new JComboBox<>();
         List<Doctor> doctors = doctorManager.getAvailableDoctors();
@@ -919,7 +922,10 @@ public class AppointmentPanel extends JPanel {
         doctorCombo.setPreferredSize(new Dimension(300, 35));
         selectionPanel.add(doctorCombo);
 
-        selectionPanel.add(new JLabel("Date:"));
+        JLabel dateLabel = new JLabel("Date:");
+        dateLabel.setFont(UIConstants.FONT_LABEL);
+        selectionPanel.add(dateLabel);
+
         DatePicker datePicker = new DatePicker();
         datePicker.setDate(LocalDate.now().toString());
         selectionPanel.add(datePicker);
@@ -928,8 +934,8 @@ public class AppointmentPanel extends JPanel {
         slotsArea.setEditable(false);
         slotsArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
-        StyledButton viewButton = StyledButton.createPrimary("View Slots");
-        viewButton.addActionListener(e -> {
+        // Auto-update function
+        Runnable updateSlots = () -> {
             if (doctorCombo.getSelectedItem() != null) {
                 int doctorId = Integer.parseInt(((String) doctorCombo.getSelectedItem()).split(" - ")[0]);
                 Doctor doctor = doctorManager.getDoctorById(doctorId);
@@ -939,8 +945,17 @@ public class AppointmentPanel extends JPanel {
                     displayTimeSlots(slotsArea, doctor, date);
                 }
             }
-        });
-        selectionPanel.add(viewButton);
+        };
+
+        // Search button
+        StyledButton searchButton = StyledButton.createPrimary("Search");
+        searchButton.setPreferredSize(new Dimension(90, 35));
+        searchButton.addActionListener(e -> updateSlots.run());
+        selectionPanel.add(searchButton);
+
+        // Add listeners to auto-update
+        doctorCombo.addActionListener(e -> updateSlots.run());
+        datePicker.addPropertyChangeListener("date", e -> updateSlots.run());
 
         mainPanel.add(selectionPanel, BorderLayout.NORTH);
 
@@ -955,6 +970,10 @@ public class AppointmentPanel extends JPanel {
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         dialog.add(mainPanel);
+
+        // Show initial slots
+        updateSlots.run();
+
         dialog.setVisible(true);
     }
 
@@ -968,30 +987,28 @@ public class AppointmentPanel extends JPanel {
         display.append("AVAILABLE TIME SLOTS\n\n");
         display.append("Doctor: Dr. ").append(doctor.getName()).append("\n");
         display.append("Specialization: ").append(doctor.getSpecialization()).append("\n");
-        display.append("Date: ").append(date).append("\n\n");
+        display.append("Date: ").append(date).append(" (").append(date.getDayOfWeek()).append(")\n");
+        display.append("Doctor's Available Days: ").append(String.join(", ", doctor.getAvailableDays())).append("\n\n");
 
-        int availableCount = 0;
-        int bookedCount = 0;
+        if (slots.isEmpty()) {
+            display.append("Available Time: None\n");
+        } else {
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+            int availableCount = 0;
 
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+            for (AppointmentManager.TimeSlot slot : slots) {
+                if (slot.isAvailable()) {
+                    String timeRange = slot.getStartTime().format(timeFormatter) + " - " +
+                            slot.getEndTime().format(timeFormatter);
+                    display.append("Available Time: ").append(timeRange).append("\n");
+                    availableCount++;
+                }
+            }
 
-        for (AppointmentManager.TimeSlot slot : slots) {
-            String timeRange = slot.getStartTime().format(timeFormatter) + " - " +
-                    slot.getEndTime().format(timeFormatter);
-            String status = slot.isAvailable() ? "AVAILABLE" : "BOOKED";
-
-            display.append(timeRange).append("  ").append(status).append("\n");
-
-            if (slot.isAvailable()) {
-                availableCount++;
-            } else {
-                bookedCount++;
+            if (availableCount == 0) {
+                display.append("All time slots are booked for this day.\n");
             }
         }
-
-        display.append("\nTotal: ").append(slots.size());
-        display.append("  Available: ").append(availableCount);
-        display.append("  Booked: ").append(bookedCount).append("\n");
 
         slotsArea.setText(display.toString());
         slotsArea.setCaretPosition(0);

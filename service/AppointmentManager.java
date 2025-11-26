@@ -4,9 +4,12 @@ import clinicapp.model.Appointment;
 import clinicapp.model.Appointment.AppointmentStatus;
 import clinicapp.model.Doctor;
 import clinicapp.model.Patient;
+import java.util.Locale;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import clinicapp.util.InputValidator;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -608,20 +611,66 @@ public class AppointmentManager {
     // Get available time slots for a doctor on a specific date.
     // Generates 30-minute slots from 8:00 AM to 5:00 PM.
     public List<TimeSlot> getAvailableTimeSlots(Doctor doctor, LocalDate date) {
-        List<TimeSlot> slots = new ArrayList<>();
-        
-        LocalTime clinicStart = LocalTime.of(8, 0);
-        LocalTime clinicEnd = LocalTime.of(17, 0);
-        int slotDurationMinutes = 30;
-        
-        LocalTime currentTime = clinicStart;
-        while (currentTime.isBefore(clinicEnd)) {
-            LocalTime slotEnd = currentTime.plusMinutes(slotDurationMinutes);
-            boolean isAvailable = !hasConflict(doctor, date, currentTime, slotEnd);
-            slots.add(new TimeSlot(currentTime, slotEnd, isAvailable));
-            currentTime = slotEnd;
-        }
-        
+    List<TimeSlot> slots = new ArrayList<>();
+    
+    // Check if doctor works on this day
+    String dayOfWeek = date.getDayOfWeek().name(); // e.g. "MONDAY"
+    boolean isWorkingDay = doctor.getAvailableDays().stream()
+            .anyMatch(day -> day.equalsIgnoreCase(dayOfWeek));
+    
+    if (!isWorkingDay) {
         return slots;
     }
+    
+    // Parse doctor's working hours - handle both 12-hour and 24-hour formats
+    LocalTime clinicStart = parseTime(doctor.getStartTime());
+    LocalTime clinicEnd = parseTime(doctor.getEndTime());
+    
+    // Fallback if parsing fails
+    if (clinicStart == null) clinicStart = LocalTime.of(8, 0);
+    if (clinicEnd == null) clinicEnd = LocalTime.of(17, 0);
+    
+    int slotDurationMinutes = 30;
+    
+    LocalTime currentTime = clinicStart;
+    while (currentTime.isBefore(clinicEnd)) {
+        LocalTime slotEnd = currentTime.plusMinutes(slotDurationMinutes);
+        
+        // Ensure slot doesn't go past end time
+        if (slotEnd.isAfter(clinicEnd)) {
+            break;
+        }
+        
+        boolean isAvailable = !hasConflict(doctor, date, currentTime, slotEnd);
+        slots.add(new TimeSlot(currentTime, slotEnd, isAvailable));
+        currentTime = slotEnd;
+    }
+    
+    return slots;
+}
+
+/**
+ * Parse time string that can be in either 12-hour (1:00 PM) or 24-hour (13:00) format
+ */
+private LocalTime parseTime(String timeStr) {
+    if (timeStr == null || timeStr.trim().isEmpty()) {
+        return null;
+    }
+    
+    // Try 24-hour format first (HH:mm)
+    LocalTime time = InputValidator.parseAndValidateTime(timeStr);
+    if (time != null) {
+        return time;
+    }
+    
+    // Try 12-hour format (h:mm a)
+    try {
+        DateTimeFormatter formatter12Hour = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
+        return LocalTime.parse(timeStr, formatter12Hour);
+    } catch (Exception e) {
+        // Ignore and return null
+    }
+    
+    return null;
+}
 }

@@ -6,7 +6,6 @@ import clinicapp.model.Appointment;
 import clinicapp.service.PatientManager;
 import clinicapp.service.AppointmentManager;
 import clinicapp.service.DoctorManager;
-import clinicapp.service.DoctorManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
