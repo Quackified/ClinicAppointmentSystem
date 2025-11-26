@@ -4,7 +4,7 @@ import clinicapp.model.Appointment;
 import clinicapp.model.Appointment.AppointmentStatus;
 import clinicapp.model.Doctor;
 import clinicapp.model.Patient;
-import java.util.Locale;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -24,10 +24,10 @@ public class AppointmentManager {
 
     // Queue for processing regular appointments in order (FIFO)
     private final Queue<Appointment> appointmentQueue;
-    
+
     // Separate queue for walk-in appointments (FIFO)
     private final Queue<Appointment> walkInQueue;
-    
+
     // Set to track which appointments are walk-ins (for filtering)
     private final Set<Integer> walkInAppointmentIds;
 
@@ -79,7 +79,7 @@ public class AppointmentManager {
             LocalTime startTime, LocalTime endTime, String reason) {
         return scheduleAppointment(patient, doctor, date, startTime, endTime, reason, false);
     }
-    
+
     /**
      * Schedule a new appointment with walk-in flag.
      * Validates that patient and doctor exist before creating appointment.
@@ -99,7 +99,20 @@ public class AppointmentManager {
             return null;
         }
 
-        if (hasConflict(doctor, date, startTime, endTime)) {
+        if (!isWalkIn && hasConflict(doctor, date, startTime, endTime)) {
+            return null;
+        }
+
+        // Check if doctor is available on this day of the week
+        String dayOfWeek = date.getDayOfWeek().name(); // e.g., "MONDAY", "TUESDAY"
+        boolean isWorkingDay = doctor.getAvailableDays().stream()
+                .anyMatch(day -> day.equalsIgnoreCase(dayOfWeek));
+
+        if (!isWorkingDay) {
+            return null; // Doctor doesn't work on this day
+        }
+
+        if (!isWalkIn && hasConflict(doctor, date, startTime, endTime)) {
             return null;
         }
 
@@ -155,7 +168,8 @@ public class AppointmentManager {
     }
 
     // Check if two time ranges overlap.
-    // Adjacent time slots (e.g., 8:00-9:00 and 9:00-10:00) are NOT considered overlapping.
+    // Adjacent time slots (e.g., 8:00-9:00 and 9:00-10:00) are NOT considered
+    // overlapping.
     private boolean timesOverlap(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
         return start1.isBefore(end2) && start2.isBefore(end1);
     }
@@ -210,6 +224,15 @@ public class AppointmentManager {
         Appointment previousState = cloneAppointment(appointment);
 
         if (newDate != null && newStartTime != null && newEndTime != null) {
+            // Check if doctor is available on the new day of the week
+            String dayOfWeek = newDate.getDayOfWeek().name();
+            boolean isWorkingDay = appointment.getDoctor().getAvailableDays().stream()
+                    .anyMatch(day -> day.equalsIgnoreCase(dayOfWeek));
+
+            if (!isWorkingDay) {
+                return false; // Doctor doesn't work on this day
+            }
+
             if (hasConflict(appointment.getDoctor(), newDate, newStartTime, newEndTime)) {
                 return false;
             }
@@ -248,7 +271,7 @@ public class AppointmentManager {
         if (appointment != null && appointment.getStatus() == AppointmentStatus.SCHEDULED) {
             Appointment previousState = cloneAppointment(appointment);
             appointment.setStatus(AppointmentStatus.CONFIRMED);
-            
+
             undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
                     appointment, previousState));
             return true;
@@ -262,7 +285,7 @@ public class AppointmentManager {
         if (appointment != null && appointment.getStatus() == AppointmentStatus.CONFIRMED) {
             Appointment previousState = cloneAppointment(appointment);
             appointment.setStatus(AppointmentStatus.IN_PROGRESS);
-            
+
             undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
                     appointment, previousState));
             return true;
@@ -276,7 +299,7 @@ public class AppointmentManager {
         if (appointment != null && appointment.getStatus() == AppointmentStatus.IN_PROGRESS) {
             Appointment previousState = cloneAppointment(appointment);
             appointment.setStatus(AppointmentStatus.COMPLETED);
-            
+
             undoStack.push(new AppointmentAction(AppointmentAction.ActionType.COMPLETE,
                     appointment, previousState));
             return true;
@@ -401,13 +424,13 @@ public class AppointmentManager {
                     }
                 }
                 break;
-            
+
             case DELETE:
                 // Restore deleted appointment
                 if (action.previousState != null) {
                     // Re-add to appointments map
                     appointments.put(action.previousState.getId(), action.previousState);
-                    
+
                     // Re-add to appropriate queue based on status
                     if (action.previousState.getStatus() == AppointmentStatus.SCHEDULED ||
                             action.previousState.getStatus() == AppointmentStatus.CONFIRMED) {
@@ -496,16 +519,16 @@ public class AppointmentManager {
         if (appointment != null) {
             // Save state for undo
             Appointment previousState = cloneAppointment(appointment);
-            
+
             // Remove from map and queues
             appointments.remove(id);
             appointmentQueue.remove(appointment);
             walkInQueue.remove(appointment);
-            
+
             // Push to undo stack so deletion can be undone
             undoStack.push(new AppointmentAction(AppointmentAction.ActionType.DELETE,
                     appointment, previousState));
-            
+
             return true;
         }
         return false;
@@ -523,9 +546,9 @@ public class AppointmentManager {
                 .filter(apt -> apt.getAppointmentDate().equals(today))
                 .count();
     }
-    
+
     // ========== Walk-In Queue Methods ==========
-    
+
     // Add appointment to walk-in queue.
     // This is separate from regular appointment queue.
     public boolean addToWalkInQueue(Appointment appointment) {
@@ -537,131 +560,135 @@ public class AppointmentManager {
         }
         return false;
     }
-    
+
     // Process next walk-in patient.
     public Appointment processNextWalkIn() {
         Appointment appointment = walkInQueue.poll();
         if (appointment != null && appointments.containsKey(appointment.getId())) {
             Appointment previousState = cloneAppointment(appointment);
             appointment.setStatus(AppointmentStatus.IN_PROGRESS);
-            
+
             undoStack.push(new AppointmentAction(AppointmentAction.ActionType.UPDATE,
                     appointment, previousState));
         }
         return appointment;
     }
-    
+
     // Get walk-in queue size.
     public int getWalkInQueueSize() {
         return walkInQueue.size();
     }
-    
+
     // View walk-in queue without removing entries.
     public List<Appointment> viewWalkInQueue() {
         return new ArrayList<>(walkInQueue);
     }
-    
+
     // Remove appointment from walk-in queue.
     public boolean removeFromWalkInQueue(Appointment appointment) {
         return walkInQueue.remove(appointment);
     }
-    
+
     // Check if an appointment is a walk-in.
     public boolean isWalkInAppointment(int appointmentId) {
         return walkInAppointmentIds.contains(appointmentId);
     }
-    
+
     // Get only regular (non-walk-in) appointments.
     public List<Appointment> getRegularAppointments() {
         return appointments.values().stream()
                 .filter(apt -> !walkInAppointmentIds.contains(apt.getId()))
                 .collect(Collectors.toList());
     }
-    
+
     // Inner class to represent a time slot.
     public static class TimeSlot {
         private final LocalTime startTime;
         private final LocalTime endTime;
         private final boolean available;
-        
+
         public TimeSlot(LocalTime startTime, LocalTime endTime, boolean available) {
             this.startTime = startTime;
             this.endTime = endTime;
             this.available = available;
         }
-        
+
         public LocalTime getStartTime() {
             return startTime;
         }
-        
+
         public LocalTime getEndTime() {
             return endTime;
         }
-        
+
         public boolean isAvailable() {
             return available;
         }
-        
+
         @Override
         public String toString() {
             return startTime + " - " + endTime + (available ? " (Available)" : " (Booked)");
         }
     }
-    
+
     // Get available time slots for a doctor on a specific date.
     // Generates 30-minute slots from 8:00 AM to 5:00 PM.
     public List<TimeSlot> getAvailableTimeSlots(Doctor doctor, LocalDate date) {
-    List<TimeSlot> slots = new ArrayList<>();
-    
-    // Check if doctor works on this day
-    String dayOfWeek = date.getDayOfWeek().name(); // e.g. "MONDAY"
-    boolean isWorkingDay = doctor.getAvailableDays().stream()
-            .anyMatch(day -> day.equalsIgnoreCase(dayOfWeek));
-    
-    if (!isWorkingDay) {
-        return slots;
-    }
-    
-    // Parse doctor's working hours - handle both 12-hour and 24-hour formats
-    LocalTime clinicStart = parseTime(doctor.getStartTime());
-    LocalTime clinicEnd = parseTime(doctor.getEndTime());
-    
-    // Fallback if parsing fails
-    if (clinicStart == null) clinicStart = LocalTime.of(8, 0);
-    if (clinicEnd == null) clinicEnd = LocalTime.of(17, 0);
-    
-    int slotDurationMinutes = 30;
-    
-    LocalTime currentTime = clinicStart;
-    while (currentTime.isBefore(clinicEnd)) {
-        LocalTime slotEnd = currentTime.plusMinutes(slotDurationMinutes);
-        
-        // Ensure slot doesn't go past end time
-        if (slotEnd.isAfter(clinicEnd)) {
-            break;
+        List<TimeSlot> slots = new ArrayList<>();
+
+        // Check if doctor works on this day
+        String dayOfWeek = date.getDayOfWeek().name(); // e.g. "MONDAY"
+        boolean isWorkingDay = doctor.getAvailableDays().stream()
+                .anyMatch(day -> day.equalsIgnoreCase(dayOfWeek));
+
+        if (!isWorkingDay) {
+            return slots;
         }
-        
-        boolean isAvailable = !hasConflict(doctor, date, currentTime, slotEnd);
-        slots.add(new TimeSlot(currentTime, slotEnd, isAvailable));
-        currentTime = slotEnd;
+
+        // Parse doctor's working hours - handle both 12-hour and 24-hour formats
+        LocalTime clinicStart = parseTime(doctor.getStartTime());
+        LocalTime clinicEnd = parseTime(doctor.getEndTime());
+
+        // Fallback if parsing fails
+        if (clinicStart == null)
+            clinicStart = LocalTime.of(8, 0);
+        if (clinicEnd == null)
+            clinicEnd = LocalTime.of(17, 0);
+
+        int slotDurationMinutes = 30;
+
+        LocalTime currentTime = clinicStart;
+        while (currentTime.isBefore(clinicEnd)) {
+            LocalTime slotEnd = currentTime.plusMinutes(slotDurationMinutes);
+
+            // Ensure slot doesn't go past end time
+            if (slotEnd.isAfter(clinicEnd)) {
+                break;
+            }
+
+            boolean isAvailable = !hasConflict(doctor, date, currentTime, slotEnd);
+            slots.add(new TimeSlot(currentTime, slotEnd, isAvailable));
+            currentTime = slotEnd;
         }
-        
+
         return slots;
     }
 
-
-    // Parse time string that can be in either 12-hour (1:00 PM) or 24-hour (13:00) format
+    /**
+     * Parse time string that can be in either 12-hour (1:00 PM) or 24-hour (13:00)
+     * format
+     */
     private LocalTime parseTime(String timeStr) {
         if (timeStr == null || timeStr.trim().isEmpty()) {
             return null;
         }
-        
+
         // Try 24-hour format first (HH:mm)
         LocalTime time = InputValidator.parseAndValidateTime(timeStr);
         if (time != null) {
             return time;
         }
-        
+
         // Try 12-hour format (h:mm a)
         try {
             DateTimeFormatter formatter12Hour = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
@@ -669,7 +696,7 @@ public class AppointmentManager {
         } catch (Exception e) {
             // Ignore and return null
         }
-        
+
         return null;
     }
 }

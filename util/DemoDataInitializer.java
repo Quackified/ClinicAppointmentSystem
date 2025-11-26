@@ -91,16 +91,6 @@ public class DemoDataInitializer {
                                         "Regular checkup");
                 }
 
-                if (patient2 != null && doctor2 != null) {
-                        appointmentManager.scheduleAppointment(
-                                        patient2,
-                                        doctor2,
-                                        today,
-                                        LocalTime.of(10, 30),
-                                        LocalTime.of(11, 30),
-                                        "Skin consultation");
-                }
-
                 if (patient3 != null && doctor3 != null) {
                         appointmentManager.scheduleAppointment(
                                         patient3,

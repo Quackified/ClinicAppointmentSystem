@@ -143,6 +143,11 @@ public class DashboardPanel extends JPanel {
         appointmentsContainer = new JPanel();
         appointmentsContainer.setLayout(new BoxLayout(appointmentsContainer, BoxLayout.Y_AXIS));
         appointmentsContainer.setBackground(Color.WHITE);
+        
+        // Hard cap at 3 cards: Reserve space for 3 × 120px cards + 2 × 15px spacing = 390px
+        int minHeight = (3 * 120) + (2 * 15);
+        appointmentsContainer.setMinimumSize(new Dimension(0, minHeight));
+        appointmentsContainer.setPreferredSize(new Dimension(Integer.MAX_VALUE, minHeight));
 
         queuePanel.add(toolbar, BorderLayout.NORTH);
         queuePanel.add(appointmentsContainer, BorderLayout.CENTER);
@@ -164,7 +169,10 @@ public class DashboardPanel extends JPanel {
         }
 
         LocalDate today = LocalDate.now();
-        List<Appointment> todayAppointments = appointmentManager.getAppointmentsByDate(today);
+        // Get only regular (non-walk-in) appointments for today
+        List<Appointment> todayAppointments = appointmentManager.getRegularAppointments().stream()
+                .filter(apt -> apt.getAppointmentDate().equals(today))
+                .collect(java.util.stream.Collectors.toList());
 
         if (todayAppointments.isEmpty()) {
             showNoAppointmentsMessage("No appointments scheduled for today");
@@ -370,7 +378,10 @@ public class DashboardPanel extends JPanel {
         if (appointmentManager == null)
             return 0;
         LocalDate today = LocalDate.now();
-        return appointmentManager.getAppointmentsByDate(today).size();
+        // Count only regular (non-walk-in) appointments for today
+        return (int) appointmentManager.getRegularAppointments().stream()
+                .filter(apt -> apt.getAppointmentDate().equals(today))
+                .count();
     }
 
     private JPanel createStatsCard(String title, String value, Color accentColor) {
