@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // Limitation: The exports folder must be in  the root, will do an export window where the user can select the folder.
+// Not done: Persistence Memory not implemented | Timestamps also not implemented  | Exporter to CSV for Appointmnets (UNUSED)
 
 public class CsvExporter {
     private static final String EXPORT_DIRECTORY = "exports/";
@@ -20,6 +21,7 @@ public class CsvExporter {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
+    // Export Patients to CSV
     public static String exportPatients(List<Patient> patients) throws IOException {
         String fileName = EXPORT_DIRECTORY + "patients_" +
                 LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) +
@@ -52,6 +54,7 @@ public class CsvExporter {
         return fileName;
     }
 
+    // Export Doctors to CSV
     public static String exportDoctors(List<Doctor> doctors) throws IOException {
         String fileName = EXPORT_DIRECTORY + "doctors_" +
                 LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) +
@@ -85,6 +88,7 @@ public class CsvExporter {
         return fileName;
     }
 
+    // Export Appointments to CSV (UNUSED)
     public static String exportAppointments(List<Appointment> appointments) throws IOException {
         String fileName = EXPORT_DIRECTORY + "appointments_" +
                 LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) +
@@ -119,6 +123,7 @@ public class CsvExporter {
         return fileName;
     }
 
+    // Export Appointments to CSV by Date (UNUSED)
     public static String exportAppointmentsByDate(List<Appointment> appointments, LocalDate date) throws IOException {
         String fileName = EXPORT_DIRECTORY + "appointments_" +
                 date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) +

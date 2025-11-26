@@ -10,12 +10,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DoctorManager {
+
+    // Initialize Hashmap for doctors
     private final Map<Integer, Doctor> doctors;
 
+    // Constructor
     public DoctorManager() {
         this.doctors = new HashMap<>();
     }
 
+    // Methods
+
+    // Add a Doctor with these credentials
     public Doctor addDoctor(String name, String specialization, String phoneNumber, String email,
             List<String> availableDays, String startTime, String endTime) {
         Doctor doctor = new Doctor(name, specialization, phoneNumber, email, availableDays, startTime, endTime);
@@ -23,15 +29,17 @@ public class DoctorManager {
         return doctor;
     }
 
-    // Methods
+    // Grabs a doctor with the associated ID
     public Doctor getDoctorById(int id) {
         return doctors.get(id);
     }
 
+    // Grabs all doctors in the arraylist
     public List<Doctor> getAllDoctors() {
         return new ArrayList<>(doctors.values());
     }
 
+    // Grabs all available doctors
     public List<Doctor> getAvailableDoctors() {
         List<Doctor> available = new ArrayList<>();
         for(Doctor doctor : doctors.values()) {
@@ -43,6 +51,7 @@ public class DoctorManager {
         return available;
     }
 
+    // Search for a doctor by name (with Partial search)
     public List<Doctor> searchDoctorByName(String name) {
         List<Doctor> results = new ArrayList<>();
         String searchTerm = name.toLowerCase();
@@ -56,6 +65,7 @@ public class DoctorManager {
         return results;
     }
 
+    // Search for a doctor by specialization (with Partial search)
     public List<Doctor> searchDoctorBySpecialization(String specialization) {
         List<Doctor> results = new ArrayList<>();
         String searchTerm = specialization.toLowerCase();
@@ -69,6 +79,7 @@ public class DoctorManager {
         return results;
     }
 
+    // Update a doctor with the associated ID
     public Boolean updateDoctor(int id, String name, String specialization, String phoneNumber, String email,
             List<String> availableDays, String startTime, String endTime) {
         Doctor doctor = doctors.get(id);
@@ -87,6 +98,7 @@ public class DoctorManager {
         return true;
     }
 
+    // Set a doctor's availability (UNUSED)
     public Boolean setDoctorAvailability(int id, boolean available) {
         Doctor doctor = doctors.get(id);
         if (doctor == null) {
@@ -96,19 +108,22 @@ public class DoctorManager {
         return true;
     }
 
+    // Delete a doctor with the associated ID
     public Boolean deleteDoctor(int id) {
         return doctors.remove(id) != null;
     }
 
+    // Get the number of doctors in the Hashmap
     public int getDoctorCount() {
         return doctors.size();
     }
-
+    
+    // Check if a doctor exists with the associated ID
     public Boolean doctorExists(int id) {
         return doctors.containsKey(id);
     }
 
-    // Using Set instead of List to only contain Unique specializations
+    // Get all specializations in the Hashmap (unused)
     public Set<String> getAllSpecializations() {
         Set<String> specializations = new HashSet<>();
         for (Doctor doctor : doctors.values()) {

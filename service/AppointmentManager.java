@@ -10,12 +10,8 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * AppointmentManager handles all appointment-related operations including
- * scheduling, updating, cancelling appointments, queue management, and undo
- * functionality.
- * Uses Stack for undo operations and Queue for appointment processing.
- */
+// Handles all appointment-related operations including scheduling, 
+// updating, cancelling appointments, queue management, and undo functionality.
 public class AppointmentManager {
     // HashMap for O(1) lookup by appointment ID
     private final Map<Integer, Appointment> appointments;
@@ -28,14 +24,15 @@ public class AppointmentManager {
     
     // Separate queue for walk-in appointments (FIFO)
     private final Queue<Appointment> walkInQueue;
+    
+    // Set to track which appointments are walk-ins (for filtering)
+    private final Set<Integer> walkInAppointmentIds;
 
     // Reference to managers for validation
     private final PatientManager patientManager;
     private final DoctorManager doctorManager;
 
-    /**
-     * Inner class to represent an appointment action for undo functionality.
-     */
+    // Inner class to represent an appointment action for undo functionality.
     private static class AppointmentAction {
         enum ActionType {
             ADD, UPDATE, CANCEL, COMPLETE, DELETE
@@ -52,14 +49,13 @@ public class AppointmentManager {
         }
     }
 
-    /**
-     * Constructor initializes appointment storage and undo/queue structures.
-     */
+    // Constructor initializes appointment storage and undo/queue structures.
     public AppointmentManager(PatientManager patientManager, DoctorManager doctorManager) {
         this.appointments = new HashMap<>();
         this.undoStack = new Stack<>();
         this.appointmentQueue = new LinkedList<>();
         this.walkInQueue = new LinkedList<>();
+        this.walkInAppointmentIds = new HashSet<>();
         this.patientManager = patientManager;
         this.doctorManager = doctorManager;
     }
@@ -78,6 +74,24 @@ public class AppointmentManager {
      */
     public Appointment scheduleAppointment(Patient patient, Doctor doctor, LocalDate date,
             LocalTime startTime, LocalTime endTime, String reason) {
+        return scheduleAppointment(patient, doctor, date, startTime, endTime, reason, false);
+    }
+    
+    /**
+     * Schedule a new appointment with walk-in flag.
+     * Validates that patient and doctor exist before creating appointment.
+     * 
+     * @param patient   Patient for the appointment
+     * @param doctor    Doctor for the appointment
+     * @param date      Date of appointment
+     * @param startTime Start time of appointment
+     * @param endTime   End time of appointment
+     * @param reason    Reason for visit
+     * @param isWalkIn  Whether this is a walk-in appointment
+     * @return The newly created Appointment object, or null if validation fails
+     */
+    public Appointment scheduleAppointment(Patient patient, Doctor doctor, LocalDate date,
+            LocalTime startTime, LocalTime endTime, String reason, boolean isWalkIn) {
         if (patient == null || doctor == null) {
             return null;
         }
@@ -89,7 +103,13 @@ public class AppointmentManager {
         Appointment appointment = new Appointment(patient, doctor, date, startTime, endTime, reason);
         appointments.put(appointment.getId(), appointment);
 
-        appointmentQueue.offer(appointment);
+        // Only add to regular queue if NOT a walk-in
+        if (!isWalkIn) {
+            appointmentQueue.offer(appointment);
+        } else {
+            // Mark as walk-in for filtering
+            walkInAppointmentIds.add(appointment.getId());
+        }
 
         undoStack.push(new AppointmentAction(AppointmentAction.ActionType.ADD,
                 appointment, null));
@@ -97,9 +117,7 @@ public class AppointmentManager {
         return appointment;
     }
 
-    /**
-     * Schedule a new appointment (legacy method for backwards compatibility).
-     */
+    // Schedule a new appointment (legacy method for backwards compatibility).
     public Appointment scheduleAppointment(Patient patient, Doctor doctor,
             LocalDateTime dateTime, String reason) {
         if (patient == null || doctor == null) {
@@ -113,10 +131,8 @@ public class AppointmentManager {
         return scheduleAppointment(patient, doctor, date, startTime, endTime, reason);
     }
 
-    /**
-     * Check if doctor has a scheduling conflict at the given time.
-     * Checks if time ranges overlap.
-     */
+    // Check if doctor has a scheduling conflict at the given time.
+    // Checks if time ranges overlap.
     private boolean hasConflict(Doctor doctor, LocalDate date, LocalTime startTime, LocalTime endTime) {
         for (Appointment apt : appointments.values()) {
             if ((apt.getStatus() == AppointmentStatus.SCHEDULED ||
@@ -135,58 +151,44 @@ public class AppointmentManager {
         return false;
     }
 
-    /**
-     * Check if two time ranges overlap.
-     * Adjacent time slots (e.g., 8:00-9:00 and 9:00-10:00) are NOT considered overlapping.
-     */
+    // Check if two time ranges overlap.
+    // Adjacent time slots (e.g., 8:00-9:00 and 9:00-10:00) are NOT considered overlapping.
     private boolean timesOverlap(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
         return start1.isBefore(end2) && start2.isBefore(end1);
     }
 
-    /**
-     * Get an appointment by ID.
-     */
+    // Get an appointment by ID.
     public Appointment getAppointmentById(int id) {
         return appointments.get(id);
     }
 
-    /**
-     * Get all appointments in the system.
-     */
+    // Get all appointments in the system.
     public List<Appointment> getAllAppointments() {
         return new ArrayList<>(appointments.values());
     }
 
-    /**
-     * Get appointments by status.
-     */
+    // Get appointments by status.
     public List<Appointment> getAppointmentsByStatus(AppointmentStatus status) {
         return appointments.values().stream()
                 .filter(apt -> apt.getStatus() == status)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get appointments for a specific patient.
-     */
+    // Get appointments for a specific patient.
     public List<Appointment> getAppointmentsByPatient(int patientId) {
         return appointments.values().stream()
                 .filter(apt -> apt.getPatient().getId() == patientId)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get appointments for a specific doctor.
-     */
+    // Get appointments for a specific doctor.
     public List<Appointment> getAppointmentsByDoctor(int doctorId) {
         return appointments.values().stream()
                 .filter(apt -> apt.getDoctor().getId() == doctorId)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get appointments for a specific date.
-     */
+    // Get appointments for a specific date.
     public List<Appointment> getAppointmentsByDate(LocalDate date) {
         return appointments.values().stream()
                 .filter(apt -> apt.getAppointmentDateTime().toLocalDate().equals(date))
@@ -194,9 +196,7 @@ public class AppointmentManager {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Update appointment details.
-     */
+    // Update appointment details.
     public boolean updateAppointment(int id, LocalDate newDate, LocalTime newStartTime,
             LocalTime newEndTime, String newReason, String notes) {
         Appointment appointment = appointments.get(id);
@@ -225,9 +225,7 @@ public class AppointmentManager {
         return true;
     }
 
-    /**
-     * Update appointment details (legacy method).
-     */
+    // Update appointment details (legacy method).
     public boolean updateAppointment(int id, LocalDateTime newDateTime, String newReason, String notes) {
         Appointment appointment = appointments.get(id);
         if (appointment == null) {
@@ -241,9 +239,7 @@ public class AppointmentManager {
         return updateAppointment(id, newDate, newStartTime, newEndTime, newReason, notes);
     }
 
-    /**
-     * Confirm an appointment.
-     */
+    // Confirm an appointment.
     public boolean confirmAppointment(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment != null && appointment.getStatus() == AppointmentStatus.SCHEDULED) {
@@ -257,9 +253,7 @@ public class AppointmentManager {
         return false;
     }
 
-    /**
-     * Mark appointment as IN_PROGRESS.
-     */
+    // Mark appointment as IN_PROGRESS.
     public boolean markInProgress(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment != null && appointment.getStatus() == AppointmentStatus.CONFIRMED) {
@@ -273,9 +267,7 @@ public class AppointmentManager {
         return false;
     }
 
-    /**
-     * Mark appointment as COMPLETED.
-     */
+    // Mark appointment as COMPLETED.
     public boolean markCompleted(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment != null && appointment.getStatus() == AppointmentStatus.IN_PROGRESS) {
@@ -289,9 +281,7 @@ public class AppointmentManager {
         return false;
     }
 
-    /**
-     * Cancel an appointment.
-     */
+    // Cancel an appointment.
     public boolean cancelAppointment(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment == null) {
@@ -309,9 +299,7 @@ public class AppointmentManager {
         return true;
     }
 
-    /**
-     * Mark appointment as completed.
-     */
+    // Mark appointment as completed.
     public boolean completeAppointment(int id, String notes) {
         Appointment appointment = appointments.get(id);
         if (appointment == null) {
@@ -332,9 +320,7 @@ public class AppointmentManager {
         return true;
     }
 
-    /**
-     * Mark appointment as no-show.
-     */
+    // Mark appointment as no-show.
     public boolean markNoShow(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment == null) {
@@ -352,10 +338,8 @@ public class AppointmentManager {
         return true;
     }
 
-    /**
-     * Process next appointment in queue.
-     * Changes status from SCHEDULED/CONFIRMED to IN_PROGRESS.
-     */
+    // Process next appointment in queue.
+    // Changes status from SCHEDULED/CONFIRMED to IN_PROGRESS.
     public Appointment processNextInQueue() {
         Appointment appointment = appointmentQueue.poll();
         if (appointment != null && appointments.containsKey(appointment.getId())) {
@@ -368,26 +352,18 @@ public class AppointmentManager {
         return appointment;
     }
 
-    /**
-     * Get current queue size.
-     */
+    // Get current queue size.
     public int getQueueSize() {
         return appointmentQueue.size();
     }
 
-    /**
-     * View appointments in queue without removing them.
-     */
+    // View appointments in queue without removing them.
     public List<Appointment> viewQueue() {
         return new ArrayList<>(appointmentQueue);
     }
 
-    /**
-     * Undo the last appointment action.
-     * Supports undoing add, update, cancel, and complete actions.
-     * 
-     * @return true if undo was successful, false if nothing to undo
-     */
+    // Undo the last appointment action.
+    // Supports undoing add, update, cancel, and complete actions.
     public boolean undoLastAction() {
         if (undoStack.isEmpty()) {
             return false;
@@ -443,30 +419,22 @@ public class AppointmentManager {
         return true;
     }
 
-    /**
-     * Check if there are actions that can be undone.
-     */
+    // Check if there are actions that can be undone.
     public boolean canUndo() {
         return !undoStack.isEmpty();
     }
 
-    /**
-     * Get count of actions that can be undone.
-     */
+    // Get count of actions that can be undone.
     public int getUndoStackSize() {
         return undoStack.size();
     }
 
-    /**
-     * Get completed appointments.
-     */
+    // Get completed appointments.
     public List<Appointment> getCompletedAppointments() {
         return getAppointmentsByStatus(AppointmentStatus.COMPLETED);
     }
 
-    /**
-     * Get appointment history for reporting.
-     */
+    // Get appointment history for reporting.
     public List<Appointment> getAppointmentHistory(LocalDate startDate, LocalDate endDate) {
         return appointments.values().stream()
                 .filter(apt -> {
@@ -477,9 +445,7 @@ public class AppointmentManager {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get daily report statistics.
-     */
+    // Get daily report statistics.
     public Map<String, Integer> getDailyStatistics(LocalDate date) {
         List<Appointment> dailyAppointments = getAppointmentsByDate(date);
 
@@ -500,9 +466,7 @@ public class AppointmentManager {
         return stats;
     }
 
-    /**
-     * Clone an appointment for undo functionality.
-     */
+    // Clone an appointment for undo functionality.
     private Appointment cloneAppointment(Appointment apt) {
         Appointment clone = new Appointment(apt.getPatient(), apt.getDoctor(),
                 apt.getAppointmentDate(), apt.getStartTime(),
@@ -512,9 +476,7 @@ public class AppointmentManager {
         return clone;
     }
 
-    /**
-     * Restore appointment to previous state.
-     */
+    // Restore appointment to previous state.
     private void restoreAppointmentState(Appointment current, Appointment previous) {
         current.setAppointmentDate(previous.getAppointmentDate());
         current.setStartTime(previous.getStartTime());
@@ -524,10 +486,8 @@ public class AppointmentManager {
         current.setNotes(previous.getNotes());
     }
 
-    /**
-     * Delete an appointment (for administrative purposes).
-     * Supports undo by saving previous state.
-     */
+    // Delete an appointment (for administrative purposes).
+    // Supports undo by saving previous state.
     public boolean deleteAppointment(int id) {
         Appointment appointment = appointments.get(id);
         if (appointment != null) {
@@ -548,17 +508,12 @@ public class AppointmentManager {
         return false;
     }
 
-
-    /**
-     * Get total appointment count.
-     */
+    // Get total appointment count.
     public int getAppointmentCount() {
         return appointments.size();
     }
 
-    /**
-     * Get count of appointments for today.
-     */
+    // Get count of appointments for today.
     public int getTodayAppointmentCount() {
         LocalDate today = LocalDate.now();
         return (int) appointments.values().stream()
@@ -568,20 +523,19 @@ public class AppointmentManager {
     
     // ========== Walk-In Queue Methods ==========
     
-    /**
-     * Add appointment to walk-in queue.
-     * This is separate from regular appointment queue.
-     */
+    // Add appointment to walk-in queue.
+    // This is separate from regular appointment queue.
     public boolean addToWalkInQueue(Appointment appointment) {
         if (appointment != null && appointments.containsKey(appointment.getId())) {
+            // Mark as walk-in and remove from regular queue if present
+            walkInAppointmentIds.add(appointment.getId());
+            appointmentQueue.remove(appointment);
             return walkInQueue.offer(appointment);
         }
         return false;
     }
     
-    /**
-     * Process next walk-in patient.
-     */
+    // Process next walk-in patient.
     public Appointment processNextWalkIn() {
         Appointment appointment = walkInQueue.poll();
         if (appointment != null && appointments.containsKey(appointment.getId())) {
@@ -594,24 +548,80 @@ public class AppointmentManager {
         return appointment;
     }
     
-    /**
-     * Get walk-in queue size.
-     */
+    // Get walk-in queue size.
     public int getWalkInQueueSize() {
         return walkInQueue.size();
     }
     
-    /**
-     * View walk-in queue without removing entries.
-     */
+    // View walk-in queue without removing entries.
     public List<Appointment> viewWalkInQueue() {
         return new ArrayList<>(walkInQueue);
     }
     
-    /**
-     * Remove appointment from walk-in queue.
-     */
+    // Remove appointment from walk-in queue.
     public boolean removeFromWalkInQueue(Appointment appointment) {
         return walkInQueue.remove(appointment);
+    }
+    
+    // Check if an appointment is a walk-in.
+    public boolean isWalkInAppointment(int appointmentId) {
+        return walkInAppointmentIds.contains(appointmentId);
+    }
+    
+    // Get only regular (non-walk-in) appointments.
+    public List<Appointment> getRegularAppointments() {
+        return appointments.values().stream()
+                .filter(apt -> !walkInAppointmentIds.contains(apt.getId()))
+                .collect(Collectors.toList());
+    }
+    
+    // Inner class to represent a time slot.
+    public static class TimeSlot {
+        private final LocalTime startTime;
+        private final LocalTime endTime;
+        private final boolean available;
+        
+        public TimeSlot(LocalTime startTime, LocalTime endTime, boolean available) {
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.available = available;
+        }
+        
+        public LocalTime getStartTime() {
+            return startTime;
+        }
+        
+        public LocalTime getEndTime() {
+            return endTime;
+        }
+        
+        public boolean isAvailable() {
+            return available;
+        }
+        
+        @Override
+        public String toString() {
+            return startTime + " - " + endTime + (available ? " (Available)" : " (Booked)");
+        }
+    }
+    
+    // Get available time slots for a doctor on a specific date.
+    // Generates 30-minute slots from 8:00 AM to 5:00 PM.
+    public List<TimeSlot> getAvailableTimeSlots(Doctor doctor, LocalDate date) {
+        List<TimeSlot> slots = new ArrayList<>();
+        
+        LocalTime clinicStart = LocalTime.of(8, 0);
+        LocalTime clinicEnd = LocalTime.of(17, 0);
+        int slotDurationMinutes = 30;
+        
+        LocalTime currentTime = clinicStart;
+        while (currentTime.isBefore(clinicEnd)) {
+            LocalTime slotEnd = currentTime.plusMinutes(slotDurationMinutes);
+            boolean isAvailable = !hasConflict(doctor, date, currentTime, slotEnd);
+            slots.add(new TimeSlot(currentTime, slotEnd, isAvailable));
+            currentTime = slotEnd;
+        }
+        
+        return slots;
     }
 }

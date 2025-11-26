@@ -18,6 +18,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+// Not done: Implementation of CSV Importer feature (Code exists but UNUSED)
  
 public class CsvImporter {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -35,6 +37,7 @@ public class CsvImporter {
         }
     }
     
+    // Import patients from a CSV file.
     public static ImportResult importPatients(String filePath, PatientManager patientManager) {
         ImportResult result = new ImportResult();
         
@@ -83,6 +86,7 @@ public class CsvImporter {
         return result;
     }
     
+    // Import doctors from a CSV file.
     public static ImportResult importDoctors(String filePath, DoctorManager doctorManager) {
         ImportResult result = new ImportResult();
         
@@ -135,6 +139,7 @@ public class CsvImporter {
         return result;
     }
     
+    // Import appointments from a CSV file (UNUSED)
     public static ImportResult importAppointments(String filePath, AppointmentManager appointmentManager,
                                                   PatientManager patientManager, DoctorManager doctorManager) {
         ImportResult result = new ImportResult();

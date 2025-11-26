@@ -98,9 +98,14 @@ public class AppointmentPanel extends JPanel {
         reportButton.setPreferredSize(new Dimension(120, 35));
         reportButton.addActionListener(e -> showDailyReportDialog());
 
+        StyledButton timeSlotsButton = StyledButton.createSuccess("View Time Slots");
+        timeSlotsButton.setPreferredSize(new Dimension(130, 35));
+        timeSlotsButton.addActionListener(e -> showTimeSlotsDialog());
+
         actionsPanel.add(scheduleButton);
         actionsPanel.add(refreshButton);
         actionsPanel.add(reportButton);
+        actionsPanel.add(timeSlotsButton);
 
         toolbar.add(sortPanel, BorderLayout.WEST);
         toolbar.add(actionsPanel, BorderLayout.EAST);
@@ -707,14 +712,14 @@ public class AppointmentPanel extends JPanel {
         // Load data
         List<Appointment> history = appointmentManager.getAppointmentHistory(LocalDate.now().minusMonths(1),
                 LocalDate.now());
-        
+
         // Filter for historical statuses only
         history = history.stream()
-            .filter(apt -> apt.getStatus() == Appointment.AppointmentStatus.COMPLETED ||
-                apt.getStatus() == Appointment.AppointmentStatus.CANCELLED ||
-                apt.getStatus() == Appointment.AppointmentStatus.NO_SHOW)
-            .collect(java.util.stream.Collectors.toList());
-        
+                .filter(apt -> apt.getStatus() == Appointment.AppointmentStatus.COMPLETED ||
+                        apt.getStatus() == Appointment.AppointmentStatus.CANCELLED ||
+                        apt.getStatus() == Appointment.AppointmentStatus.NO_SHOW)
+                .collect(java.util.stream.Collectors.toList());
+
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
         for (Appointment apt : history) {
             model.addRow(new Object[] { apt.getId(), apt.getAppointmentDate(),
@@ -816,9 +821,9 @@ public class AppointmentPanel extends JPanel {
 
             // Group by status
             var statusCount = appointments.stream()
-                .collect(java.util.stream.Collectors.groupingBy(
-                    Appointment::getStatus, 
-                    java.util.stream.Collectors.counting()));
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            Appointment::getStatus,
+                            java.util.stream.Collectors.counting()));
 
             report.append("Summary by Status:\n");
             statusCount.forEach((status, count) -> report.append(String.format("  %s: %d\n", status, count)));
@@ -887,5 +892,108 @@ public class AppointmentPanel extends JPanel {
             }
         }
         return null;
+    }
+
+    /**
+     * Show dialog to view available time slots for a doctor
+     */
+    private void showTimeSlotsDialog() {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+                "View Available Time Slots", true);
+        dialog.setSize(700, 600);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // Top panel - Doctor and Date selection
+        JPanel selectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        selectionPanel.add(new JLabel("Doctor:"));
+
+        JComboBox<String> doctorCombo = new JComboBox<>();
+        List<Doctor> doctors = doctorManager.getAvailableDoctors();
+        for (Doctor doctor : doctors) {
+            doctorCombo.addItem(doctor.getId() + " - Dr. " + doctor.getName() +
+                    " (" + doctor.getSpecialization() + ")");
+        }
+        doctorCombo.setPreferredSize(new Dimension(300, 35));
+        selectionPanel.add(doctorCombo);
+
+        selectionPanel.add(new JLabel("Date:"));
+        DatePicker datePicker = new DatePicker();
+        datePicker.setDate(LocalDate.now().toString());
+        selectionPanel.add(datePicker);
+
+        JTextArea slotsArea = new JTextArea();
+        slotsArea.setEditable(false);
+        slotsArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
+        StyledButton viewButton = StyledButton.createPrimary("View Slots");
+        viewButton.addActionListener(e -> {
+            if (doctorCombo.getSelectedItem() != null) {
+                int doctorId = Integer.parseInt(((String) doctorCombo.getSelectedItem()).split(" - ")[0]);
+                Doctor doctor = doctorManager.getDoctorById(doctorId);
+                LocalDate date = InputValidator.parseAndValidateDate(datePicker.getDateString());
+
+                if (doctor != null && date != null) {
+                    displayTimeSlots(slotsArea, doctor, date);
+                }
+            }
+        });
+        selectionPanel.add(viewButton);
+
+        mainPanel.add(selectionPanel, BorderLayout.NORTH);
+
+        JScrollPane scrollPane = new JScrollPane(slotsArea);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Bottom panel - Close button
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton closeButton = new JButton("Close");
+        closeButton.addActionListener(e -> dialog.dispose());
+        buttonPanel.add(closeButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.add(mainPanel);
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Display time slots for a doctor on a specific date
+     */
+    private void displayTimeSlots(JTextArea slotsArea, Doctor doctor, LocalDate date) {
+        List<AppointmentManager.TimeSlot> slots = appointmentManager.getAvailableTimeSlots(doctor, date);
+
+        StringBuilder display = new StringBuilder();
+        display.append("AVAILABLE TIME SLOTS\n\n");
+        display.append("Doctor: Dr. ").append(doctor.getName()).append("\n");
+        display.append("Specialization: ").append(doctor.getSpecialization()).append("\n");
+        display.append("Date: ").append(date).append("\n\n");
+
+        int availableCount = 0;
+        int bookedCount = 0;
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        for (AppointmentManager.TimeSlot slot : slots) {
+            String timeRange = slot.getStartTime().format(timeFormatter) + " - " +
+                    slot.getEndTime().format(timeFormatter);
+            String status = slot.isAvailable() ? "AVAILABLE" : "BOOKED";
+
+            display.append(timeRange).append("  ").append(status).append("\n");
+
+            if (slot.isAvailable()) {
+                availableCount++;
+            } else {
+                bookedCount++;
+            }
+        }
+
+        display.append("\nTotal: ").append(slots.size());
+        display.append("  Available: ").append(availableCount);
+        display.append("  Booked: ").append(bookedCount).append("\n");
+
+        slotsArea.setText(display.toString());
+        slotsArea.setCaretPosition(0);
     }
 }

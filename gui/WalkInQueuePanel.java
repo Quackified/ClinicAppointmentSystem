@@ -334,7 +334,8 @@ public class WalkInQueuePanel extends JPanel {
             java.time.LocalDate.now(),
             java.time.LocalTime.now(),
             java.time.LocalTime.now().plusMinutes(30),
-            reason
+            reason,
+            true  // Mark as walk-in appointment
         );
         
         if (appointment != null) {
