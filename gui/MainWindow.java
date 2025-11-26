@@ -5,8 +5,8 @@ import clinicapp.service.DoctorManager;
 import clinicapp.service.PatientManager;
 
 import javax.swing.*;
-import java.awt.*;
 
+// Main window - displays the main application window 
 public class MainWindow extends JFrame {
     private PatientManager patientManager;
     private DoctorManager doctorManager;

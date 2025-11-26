@@ -19,10 +19,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Redesigned Doctor Panel - Single page layout
- * Search bar + table + action buttons
- */
+// Doctor Panel - Search bar + table + action buttons
 public class DoctorPanel extends JPanel {
     private DoctorManager doctorManager;
     private JTable doctorTable;

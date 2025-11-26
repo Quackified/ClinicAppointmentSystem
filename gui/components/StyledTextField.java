@@ -5,12 +5,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-/**
- * Enhanced text field with better styling and validation support
- */
+// Enhanced text field with better styling and validation support
 public class StyledTextField extends JTextField {
 
-    private boolean hasError = false;
+
 
     public StyledTextField() {
         super();
@@ -36,43 +34,14 @@ public class StyledTextField extends JTextField {
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
-                if (!hasError) {
-                    setBorder(UIConstants.createFocusBorder());
-                }
+                setBorder(UIConstants.createFocusBorder());
             }
 
             @Override
             public void focusLost(FocusEvent e) {
-                if (!hasError) {
-                    setBorder(UIConstants.createInputBorder());
-                }
+                setBorder(UIConstants.createInputBorder());
             }
         });
     }
 
-    /**
-     * Set error state (red border)
-     */
-    public void setError(boolean error) {
-        this.hasError = error;
-        if (error) {
-            setBorder(UIConstants.createErrorBorder());
-        } else {
-            setBorder(hasFocus() ? UIConstants.createFocusBorder() : UIConstants.createInputBorder());
-        }
-    }
-
-    /**
-     * Check if field has error state
-     */
-    public boolean hasError() {
-        return hasError;
-    }
-
-    /**
-     * Clear error state
-     */
-    public void clearError() {
-        setError(false);
-    }
 }

@@ -5,10 +5,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-/**
- * Custom styled button with color variants matching the React UI
- * Supports: Primary (blue), Success (green), Danger (red), Outline
- */
+// Custom styled button with color variants matching the React UI
+// Supports: Primary (blue), Success (green), Danger (red), Outline
 public class StyledButton extends JButton {
 
     public enum ButtonVariant {
@@ -97,10 +95,6 @@ public class StyledButton extends JButton {
 
     public static StyledButton createDanger(String text) {
         return new StyledButton(text, ButtonVariant.DANGER);
-    }
-
-    public static StyledButton createWarning(String text) {
-        return new StyledButton(text, ButtonVariant.WARNING);
     }
 
     public static StyledButton createOutline(String text) {

@@ -8,10 +8,8 @@ import com.formdev.flatlaf.FlatClientProperties;
 import java.awt.*;
 import java.awt.event.*;
 
-/**
- * Simplified login frame - direct login to dashboard
- * No role selection needed
- */
+// Login frame - direct login to dashboard for now
+// No role selection needed
 public class LoginFrame extends JFrame {
 
     private JTextField emailField;
@@ -200,9 +198,6 @@ public class LoginFrame extends JFrame {
     private void handleLogin() {
         String email = emailField.getText().trim();
         String password = new String(passwordField.getPassword());
-
-        email = "admin";
-        password = "admin";
 
         emailField.putClientProperty(FlatClientProperties.OUTLINE, null);
         passwordField.putClientProperty(FlatClientProperties.OUTLINE, null);

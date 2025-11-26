@@ -19,10 +19,7 @@ import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Redesigned Patient Panel - Single page layout
- * Search bar + table + action buttons
- */
+// Patient Panel
 public class PatientPanel extends JPanel {
     private PatientManager patientManager;
     private JTable patientTable;

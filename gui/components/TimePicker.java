@@ -3,9 +3,7 @@ package clinicapp.gui.components;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Time picker with Hour, Minute, and AM/PM selector
- */
+// Time picker with Hour, Minute, and AM/PM selector
 public class TimePicker extends JPanel {
     private JTextField hourField;
     private JTextField minuteField;

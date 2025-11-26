@@ -644,33 +644,32 @@ public class AppointmentManager {
         boolean isAvailable = !hasConflict(doctor, date, currentTime, slotEnd);
         slots.add(new TimeSlot(currentTime, slotEnd, isAvailable));
         currentTime = slotEnd;
+        }
+        
+        return slots;
     }
-    
-    return slots;
-}
 
-/**
- * Parse time string that can be in either 12-hour (1:00 PM) or 24-hour (13:00) format
- */
-private LocalTime parseTime(String timeStr) {
-    if (timeStr == null || timeStr.trim().isEmpty()) {
+
+    // Parse time string that can be in either 12-hour (1:00 PM) or 24-hour (13:00) format
+    private LocalTime parseTime(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) {
+            return null;
+        }
+        
+        // Try 24-hour format first (HH:mm)
+        LocalTime time = InputValidator.parseAndValidateTime(timeStr);
+        if (time != null) {
+            return time;
+        }
+        
+        // Try 12-hour format (h:mm a)
+        try {
+            DateTimeFormatter formatter12Hour = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
+            return LocalTime.parse(timeStr, formatter12Hour);
+        } catch (Exception e) {
+            // Ignore and return null
+        }
+        
         return null;
     }
-    
-    // Try 24-hour format first (HH:mm)
-    LocalTime time = InputValidator.parseAndValidateTime(timeStr);
-    if (time != null) {
-        return time;
-    }
-    
-    // Try 12-hour format (h:mm a)
-    try {
-        DateTimeFormatter formatter12Hour = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
-        return LocalTime.parse(timeStr, formatter12Hour);
-    } catch (Exception e) {
-        // Ignore and return null
-    }
-    
-    return null;
-}
 }

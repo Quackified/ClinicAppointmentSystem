@@ -17,6 +17,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+// Appointment Panel - Search bar + table + action buttons
 public class AppointmentPanel extends JPanel {
     private AppointmentManager appointmentManager;
     private PatientManager patientManager;
@@ -215,7 +216,7 @@ public class AppointmentPanel extends JPanel {
 
     private void refreshTable() {
         tableModel.setRowCount(0);
-        List<Appointment> appointments = appointmentManager.getAllAppointments();
+        List<Appointment> appointments = appointmentManager.getRegularAppointments();
 
         // Sort appointments based on selected criteria
         String sortBy = sortCombo != null ? (String) sortCombo.getSelectedItem() : "Time";
@@ -240,6 +241,7 @@ public class AppointmentPanel extends JPanel {
         }
     }
 
+    // Sort appointments based on selected criteria
     private void sortAppointments(List<Appointment> appointments, String sortBy) {
         switch (sortBy) {
             case "Time":
@@ -274,7 +276,7 @@ public class AppointmentPanel extends JPanel {
                 break;
         }
     }
-
+    
     private void showScheduleDialog() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Schedule Appointment", true);
         dialog.setSize(500, 450);
@@ -652,9 +654,7 @@ public class AppointmentPanel extends JPanel {
         }
     }
 
-    /**
-     * Undo last appointment action using Stack
-     */
+    // Undo last appointment action using Stack
     private void undoLastAction() {
         if (!appointmentManager.canUndo()) {
             JOptionPane.showMessageDialog(this, "There's no history to undo", "Undo", JOptionPane.INFORMATION_MESSAGE);
@@ -673,9 +673,7 @@ public class AppointmentPanel extends JPanel {
         }
     }
 
-    /**
-     * Show appointment history dialog
-     */
+    // Show appointment history dialog
     private void showAppointmentHistory() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Appointment History", true);
         dialog.setSize(900, 500);
@@ -738,9 +736,7 @@ public class AppointmentPanel extends JPanel {
         dialog.setVisible(true);
     }
 
-    /**
-     * Generate and display daily report of appointments
-     */
+    // Generate and display daily report of appointments
     private void showDailyReportDialog() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
                 "Daily Appointment Report", true);
@@ -894,9 +890,7 @@ public class AppointmentPanel extends JPanel {
         return null;
     }
 
-    /**
-     * Show dialog to view available time slots for a doctor
-     */
+    // Show dialog to view available time slots for a doctor
     private void showTimeSlotsDialog() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
                 "View Available Time Slots", true);
@@ -977,9 +971,7 @@ public class AppointmentPanel extends JPanel {
         dialog.setVisible(true);
     }
 
-    /**
-     * Display time slots for a doctor on a specific date
-     */
+    // Display time slots for a doctor on a specific date
     private void displayTimeSlots(JTextArea slotsArea, Doctor doctor, LocalDate date) {
         List<AppointmentManager.TimeSlot> slots = appointmentManager.getAvailableTimeSlots(doctor, date);
 

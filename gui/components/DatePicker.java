@@ -3,10 +3,8 @@ package clinicapp.gui.components;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Enhanced date picker with separate Day, Month, Year fields
- * Matches the user-friendly design pattern
- */
+// Date picker with separate Day, Month, Year fields
+// Matches the user-friendly design pattern
 public class DatePicker extends JPanel {
     private JTextField dayField;
     private JTextField monthField;
@@ -65,13 +63,15 @@ public class DatePicker extends JPanel {
         add(monthPanel);
         add(yearPanel);
     }
-
+    
+    // Set the date from individual day, month, and year
     public void setDate(int day, int month, int year) {
         dayField.setText(String.format("%02d", day));
         monthField.setText(String.format("%02d", month));
         yearField.setText(String.valueOf(year));
     }
 
+    // Set the date from a string in the format "YYYY-MM-DD"
     public void setDate(String dateStr) {
         if (dateStr != null && !dateStr.isEmpty()) {
             String[] parts = dateStr.split("-");
@@ -83,6 +83,7 @@ public class DatePicker extends JPanel {
         }
     }
 
+    // Get the date as a string in the format "YYYY-MM-DD"
     public String getDateString() {
         String day = dayField.getText().trim();
         String month = monthField.getText().trim();

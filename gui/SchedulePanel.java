@@ -9,10 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Dedicated Schedule Panel for viewing appointment schedules
- * Features horizontal appointment cards inspired by modern UI design
- */
+// Dedicated Schedule Panel for viewing appointment schedules
 public class SchedulePanel extends JPanel {
 
     private AppointmentManager appointmentManager;
@@ -24,6 +21,7 @@ public class SchedulePanel extends JPanel {
     private JButton nextDayButton;
     private JButton refreshButton;
 
+    // Scales an icon to the specified dimensions
     private static ImageIcon scaleIcon(String path, int width, int height) {
         ImageIcon icon = new ImageIcon(SidebarPanel.class.getResource(path));
         Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
@@ -34,7 +32,7 @@ public class SchedulePanel extends JPanel {
     ImageIcon clockIcon = scaleIcon("/clinicapp/resources/icons/clock-16-1.png", 12, 12);
     ImageIcon dateIcon = scaleIcon("/clinicapp/resources/icons/date-16-1.png", 12, 12);
     
-
+    // Constructor
     public SchedulePanel(AppointmentManager appointmentManager) {
         this.appointmentManager = appointmentManager;
         this.selectedDate = LocalDate.now();
@@ -42,6 +40,7 @@ public class SchedulePanel extends JPanel {
         loadAppointments();
     }
 
+    // Initializes the UI components
     private void initializeUI() {
         setLayout(new BorderLayout(20, 20));
         setBackground(UIConstants.GRAY_50);
@@ -72,6 +71,7 @@ public class SchedulePanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    // Creates the header panel
     private JPanel createHeaderPanel() {
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Color.WHITE);
@@ -93,6 +93,7 @@ public class SchedulePanel extends JPanel {
         return headerPanel;
     }
 
+    // Creates the date navigation panel
     private JPanel createDateNavigationPanel() {
         JPanel navPanel = new JPanel(new BorderLayout(15, 0));
         navPanel.setBackground(Color.WHITE);
@@ -139,6 +140,7 @@ public class SchedulePanel extends JPanel {
         return navPanel;
     }
 
+    // Updates the date label
     private void updateDateLabel() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
         String dateText = selectedDate.format(formatter);
@@ -150,18 +152,21 @@ public class SchedulePanel extends JPanel {
         }
     }
 
+    // Navigates to the previous or next day
     private void navigateDay(int days) {
         selectedDate = selectedDate.plusDays(days);
         updateDateLabel();
         loadAppointments();
     }
 
+    // Navigates to today
     private void navigateToToday() {
         selectedDate = LocalDate.now();
         updateDateLabel();
         loadAppointments();
     }
 
+    // Loads appointments for the selected date
     private void loadAppointments() {
         appointmentsContainer.removeAll();
 
@@ -186,6 +191,7 @@ public class SchedulePanel extends JPanel {
         appointmentsContainer.repaint();
     }
 
+    // Creates an appointment card
     private JPanel createAppointmentCard(Appointment appointment) {
         JPanel card = new JPanel(new BorderLayout(15, 15));
         card.setBackground(Color.WHITE);
@@ -217,6 +223,7 @@ public class SchedulePanel extends JPanel {
         return card;
     }
 
+    // Creates the left section of the appointment card
     private JPanel createLeftSection(Appointment appointment) {
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
@@ -264,6 +271,7 @@ public class SchedulePanel extends JPanel {
         return leftPanel;
     }
 
+    // Creates the center section of the appointment card
     private JPanel createCenterSection(Appointment appointment) {
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
@@ -277,6 +285,7 @@ public class SchedulePanel extends JPanel {
         return centerPanel;
     }
 
+    // Creates the right section of the appointment card
     private JPanel createRightSection(Appointment appointment) {
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         rightPanel.setBackground(Color.WHITE);
@@ -296,6 +305,7 @@ public class SchedulePanel extends JPanel {
         return rightPanel;
     }
 
+    // Returns the color based on the appointment status
     private Color getStatusColor(String status) {
         switch (status) {
             case "SCHEDULED":
@@ -315,6 +325,7 @@ public class SchedulePanel extends JPanel {
         }
     }
 
+    // Returns the text based on the appointment status
     private String getStatusText(String status) {
         switch (status) {
             case "SCHEDULED":
@@ -334,6 +345,7 @@ public class SchedulePanel extends JPanel {
         }
     }
 
+    // Shows a message when there are no appointments
     private void showNoAppointmentsMessage(String message) {
         JPanel messagePanel = new JPanel();
         messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
@@ -358,6 +370,7 @@ public class SchedulePanel extends JPanel {
         appointmentsContainer.add(messagePanel);
     }
 
+    // Shows appointment details in a dialog
     private void showAppointmentDetails(Appointment appointment) {
         String details = appointment.getDetailedInfo();
         JTextArea textArea = new JTextArea(details);
@@ -375,6 +388,7 @@ public class SchedulePanel extends JPanel {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
+    // Refreshes the data
     public void refreshData() {
         loadAppointments();
     }

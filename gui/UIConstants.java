@@ -4,15 +4,12 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 
-/**
- * UI Constants for the Clinic Management System
- * Contains color palette, fonts, and styling helpers matching the React UI
- * design
- */
+// UI Constants for the Clinic Management System
+// Contains color palette, fonts, and styling helpers
 public class UIConstants {
 
-    // ==================== COLOR PALETTE ====================
-    // Primary Colors (Blue theme from React UI)
+    // COLOR PALETTE
+    // Primary Colors (Blue)
     public static final Color PRIMARY_BLUE = new Color(37, 99, 235); // rgba(37, 99, 235, 1)
     public static final Color PRIMARY_BLUE_LIGHT = new Color(219, 234, 254); // #dbeafe
     public static final Color PRIMARY_BLUE_DARK = new Color(30, 64, 175); // #1e40af
@@ -57,7 +54,7 @@ public class UIConstants {
     public static final Color WHITE = Color.WHITE;
     public static final Color BLACK = Color.BLACK;
 
-    // ==================== FONTS ====================
+    // FONTS
     public static final Font FONT_TITLE = new Font("Arial", Font.BOLD, 24);
     public static final Font FONT_HEADING = new Font("Arial", Font.BOLD, 18);
     public static final Font FONT_SUBHEADING = new Font("Arial", Font.BOLD, 16);
@@ -67,7 +64,7 @@ public class UIConstants {
     public static final Font FONT_SMALL = new Font("Arial", Font.PLAIN, 12);
     public static final Font FONT_BUTTON = new Font("Arial", Font.BOLD, 13);
 
-    // ==================== SPACING ====================
+    // SPACING
     public static final int PADDING_SMALL = 5;
     public static final int PADDING_MEDIUM = 10;
     public static final int PADDING_LARGE = 15;
@@ -77,26 +74,21 @@ public class UIConstants {
     public static final int MARGIN_MEDIUM = 10;
     public static final int MARGIN_LARGE = 15;
 
-    // ==================== DIMENSIONS ====================
+    // DIMENSIONS
     public static final int BUTTON_HEIGHT = 36;
     public static final int INPUT_HEIGHT = 36;
     public static final int SIDEBAR_WIDTH = 240;
     public static final int BORDER_RADIUS = 6;
 
-    // ==================== HELPER METHODS ====================
-
-    /**
-     * Creates a card-style border with subtle shadow effect
-     */
+    // HELPER METHODS
+    // Creates a card-style border with subtle shadow effect
     public static Border createCardBorder() {
         return BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(GRAY_200, 1),
                 BorderFactory.createEmptyBorder(PADDING_LARGE, PADDING_LARGE, PADDING_LARGE, PADDING_LARGE));
     }
 
-    /**
-     * Creates a card border with colored left accent
-     */
+    // Creates a card border with colored left accent
     public static Border createCardBorderWithAccent(Color accentColor) {
         Border leftBorder = BorderFactory.createMatteBorder(0, 4, 0, 0, accentColor);
         Border outerBorder = BorderFactory.createLineBorder(GRAY_200, 1);
@@ -107,94 +99,22 @@ public class UIConstants {
                 padding);
     }
 
-    /**
-     * Creates a simple padding border
-     */
+    // Creates a simple padding border
     public static Border createPaddingBorder(int padding) {
         return BorderFactory.createEmptyBorder(padding, padding, padding, padding);
     }
 
-    /**
-     * Creates a rounded border (simulated with line border)
-     */
-    public static Border createRoundedBorder(Color color) {
-        return BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(color, 1),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12));
-    }
-
-    /**
-     * Creates a focus border for input fields
-     */
+    // Creates a focus border for input fields
     public static Border createFocusBorder() {
         return BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(PRIMARY_BLUE, 2),
                 BorderFactory.createEmptyBorder(6, 10, 6, 10));
     }
 
-    /**
-     * Creates a normal border for input fields
-     */
+    // Creates a normal border for input fields
     public static Border createInputBorder() {
         return BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(GRAY_300, 1),
                 BorderFactory.createEmptyBorder(7, 11, 7, 11));
-    }
-
-    /**
-     * Creates an error border for validation
-     */
-    public static Border createErrorBorder() {
-        return BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(DANGER_RED, 2),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10));
-    }
-
-    /**
-     * Applies hover effect to a component
-     */
-    public static void applyHoverEffect(JComponent component, Color normalColor, Color hoverColor) {
-        component.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                component.setBackground(hoverColor);
-            }
-
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                component.setBackground(normalColor);
-            }
-        });
-    }
-
-    /**
-     * Creates a styled panel with background color
-     */
-    public static JPanel createStyledPanel(Color backgroundColor) {
-        JPanel panel = new JPanel();
-        panel.setBackground(backgroundColor);
-        return panel;
-    }
-
-    /**
-     * Creates a stats card panel (used in dashboard)
-     */
-    public static JPanel createStatsCard(String title, String value, Color accentColor) {
-        JPanel card = new JPanel(new BorderLayout(10, 10));
-        card.setBackground(WHITE);
-        card.setBorder(createCardBorderWithAccent(accentColor));
-
-        JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(new Font("Arial", Font.BOLD, 32));
-        valueLabel.setForeground(GRAY_800);
-
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(FONT_SMALL);
-        titleLabel.setForeground(GRAY_600);
-
-        card.add(valueLabel, BorderLayout.CENTER);
-        card.add(titleLabel, BorderLayout.SOUTH);
-
-        return card;
     }
 }

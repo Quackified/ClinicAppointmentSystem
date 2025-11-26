@@ -13,10 +13,8 @@ import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * GUI Panel for managing walk-in patient queue
- * Uses existing AppointmentManager queue for waitlist management
- */
+// GUI Panel for managing walk-in patient queue
+// Uses existing AppointmentManager queue for waitlist management
 public class WalkInQueuePanel extends JPanel {
     private AppointmentManager appointmentManager;
     private PatientManager patientManager;
@@ -28,6 +26,7 @@ public class WalkInQueuePanel extends JPanel {
     private JComboBox<String> patientCombo;
     private JTextField reasonField;
     
+    // Constructor
     public WalkInQueuePanel(AppointmentManager appointmentManager, PatientManager patientManager, DoctorManager doctorManager) {
         this.appointmentManager = appointmentManager;
         this.patientManager = patientManager;
@@ -35,6 +34,7 @@ public class WalkInQueuePanel extends JPanel {
         initializeUI();
     }
     
+    // Initialize UI components
     private void initializeUI() {
         setLayout(new BorderLayout(0, 0));
         setBackground(UIConstants.GRAY_50);
@@ -71,6 +71,7 @@ public class WalkInQueuePanel extends JPanel {
         refreshQueue();
     }
     
+    // Create stats panel
     private JPanel createStatsPanel() {
         JPanel panel = new JPanel(new GridLayout(1, 2, 15, 0));
         panel.setBackground(UIConstants.GRAY_50);
@@ -119,6 +120,7 @@ public class WalkInQueuePanel extends JPanel {
         return panel;
     }
     
+    // Create add patient panel
     private JPanel createAddPatientPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
@@ -191,6 +193,7 @@ public class WalkInQueuePanel extends JPanel {
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
         
+        // Info label
         JLabel infoLabel = new JLabel("<html><b>Queue System:</b> First-In-First-Out (FIFO)<br>" +
                                      "Patients are served in order of arrival.</html>");
         infoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -206,6 +209,7 @@ public class WalkInQueuePanel extends JPanel {
         return panel;
     }
     
+    // Create queue table panel
     private JPanel createQueueTablePanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
@@ -251,6 +255,7 @@ public class WalkInQueuePanel extends JPanel {
         return panel;
     }
     
+    // Create bottom panel
     private JPanel createBottomPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         panel.setBackground(UIConstants.GRAY_50);
@@ -274,6 +279,7 @@ public class WalkInQueuePanel extends JPanel {
         return panel;
     }
     
+    // Load patients into combo box
     private void loadPatients() {
         patientCombo.removeAllItems();
         List<Patient> patients = patientManager.getAllPatients();
@@ -283,6 +289,7 @@ public class WalkInQueuePanel extends JPanel {
         }
     }
     
+    // Add patient to queue
     private void addPatientToQueue() {
         if (patientCombo.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this, 
@@ -292,6 +299,7 @@ public class WalkInQueuePanel extends JPanel {
             return;
         }
         
+        // Get reason for visit
         String reason = reasonField.getText().trim();
         if (reason.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
@@ -327,9 +335,12 @@ public class WalkInQueuePanel extends JPanel {
             return;
         }
 
+        // Schedule walk-in appointment for today using existing AppointmentManager
+        // Walk-ins get immediate time slots
+        // Get first available doctor for walk-in
         Appointment appointment = appointmentManager.scheduleAppointment(
             patient, 
-            doctors.get(0), // ✅ NOW: Use first available doctor instead of null
+            doctors.get(0), // NOW: Use first available doctor instead of null
             java.time.LocalDate.now(),
             java.time.LocalTime.now(),
             java.time.LocalTime.now().plusMinutes(30),
@@ -360,6 +371,7 @@ public class WalkInQueuePanel extends JPanel {
         }
     }
     
+    // Call next patient
     private void callNextPatient() {
         if (appointmentManager.getWalkInQueueSize() == 0) {
             JOptionPane.showMessageDialog(this, 
@@ -394,6 +406,7 @@ public class WalkInQueuePanel extends JPanel {
         }
     }
     
+    // Remove patient from queue
     private void removeFromQueue() {
         int selectedRow = queueTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -428,6 +441,7 @@ public class WalkInQueuePanel extends JPanel {
         }
     }
     
+    // Refresh queue
     private void refreshQueue() {
         // Clear table
         tableModel.setRowCount(0);
@@ -461,10 +475,8 @@ public class WalkInQueuePanel extends JPanel {
         }
     }
     
-    /**
-     * Public method to refresh the queue display
-     * Can be called from other panels
-     */
+    // Public method to refresh the queue display
+    // Can be called from other panels
     public void updateQueue() {
         refreshQueue();
     }

@@ -3,16 +3,15 @@ package clinicapp.gui;
 import clinicapp.gui.components.*;
 import clinicapp.model.Appointment;
 import clinicapp.service.AppointmentManager;
+import clinicapp.service.PatientManager;
+import clinicapp.service.DoctorManager;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Dashboard panel with statistics cards, horizontal quick actions, and
- * full-width appointment queue
- */
+// Dashboard panel with statistics cards, horizontal quick actions, and appointment queue
 public class DashboardPanel extends JPanel {
 
     private int totalPatients = 0;
@@ -20,6 +19,8 @@ public class DashboardPanel extends JPanel {
     private int todayAppointments = 0;
     private NavigationCallback navCallback;
     private AppointmentManager appointmentManager;
+    private PatientManager patientManager;
+    private DoctorManager doctorManager;
     private JPanel appointmentsContainer;
     private String userName;
 
@@ -37,9 +38,12 @@ public class DashboardPanel extends JPanel {
         void onNavigate(String page);
     }
 
-    public DashboardPanel(NavigationCallback callback, AppointmentManager appointmentManager, String userName) {
+    public DashboardPanel(NavigationCallback callback, AppointmentManager appointmentManager, 
+            PatientManager patientManager, DoctorManager doctorManager, String userName) {
         this.navCallback = callback;
         this.appointmentManager = appointmentManager;
+        this.patientManager = patientManager;
+        this.doctorManager = doctorManager;
         this.userName = userName;
         initializeUI();
     }
@@ -103,7 +107,7 @@ public class DashboardPanel extends JPanel {
         add(titlePanel, BorderLayout.NORTH);
         add(contentWrapper, BorderLayout.CENTER);
     }
-
+    
     private JPanel createAppointmentQueuePanel() {
         JPanel queuePanel = new JPanel(new BorderLayout(10, 10));
         queuePanel.setBackground(Color.WHITE);
@@ -179,7 +183,7 @@ public class DashboardPanel extends JPanel {
         appointmentsContainer.revalidate();
         appointmentsContainer.repaint();
     }
-
+    
     private JPanel createAppointmentCard(Appointment appointment) {
         JPanel card = new JPanel(new BorderLayout(15, 15));
         card.setBackground(Color.WHITE);
@@ -393,5 +397,17 @@ public class DashboardPanel extends JPanel {
         initializeUI();
         revalidate();
         repaint();
+    }
+
+    // Refreshes the dashboard data
+    public void refreshData() {
+        // Update statistics from managers
+        if (patientManager != null && doctorManager != null && appointmentManager != null) {
+            updateStats(
+                patientManager.getAllPatients().size(),
+                doctorManager.getAllDoctors().size(),
+                appointmentManager.getAllAppointments().size()
+            );
+        }
     }
 }

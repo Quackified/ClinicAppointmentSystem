@@ -2,12 +2,9 @@ package clinicapp.service;
 
 import clinicapp.model.Doctor;
 import java.util.List;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 public class DoctorManager {
 
@@ -98,15 +95,7 @@ public class DoctorManager {
         return true;
     }
 
-    // Set a doctor's availability (UNUSED)
-    public Boolean setDoctorAvailability(int id, boolean available) {
-        Doctor doctor = doctors.get(id);
-        if (doctor == null) {
-            return false;
-        }
-        doctor.setAvailable(available);
-        return true;
-    }
+
 
     // Delete a doctor with the associated ID
     public Boolean deleteDoctor(int id) {
@@ -123,13 +112,4 @@ public class DoctorManager {
         return doctors.containsKey(id);
     }
 
-    // Get all specializations in the Hashmap (unused)
-    public Set<String> getAllSpecializations() {
-        Set<String> specializations = new HashSet<>();
-        for (Doctor doctor : doctors.values()) {
-            specializations.add(doctor.getSpecialization());
-        }
-
-        return specializations;
-    }
 }

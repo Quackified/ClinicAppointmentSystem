@@ -5,16 +5,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-/**
- * Vertical sidebar navigation panel
- * Matches the React UI sidebar design
- */
+// Vertical sidebar navigation panel
 public class SidebarPanel extends JPanel {
 
     private String currentPage = "dashboard";
     private NavigationCallback callback;
     private JPanel menuPanel;
 
+    // Scales an icon to the specified dimensions
     private static ImageIcon scaleIcon(String path, int width, int height) {
         ImageIcon icon = new ImageIcon(SidebarPanel.class.getResource(path));
         Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
@@ -35,17 +33,20 @@ public class SidebarPanel extends JPanel {
     ImageIcon queueIconDark = scaleIcon("/clinicapp/resources/icons/person-32-1.png", 24, 24);
     ImageIcon queueIconLight = scaleIcon("/clinicapp/resources/icons/person-32-2.png", 24, 24);
 
+    // Navigation callback interface
     public interface NavigationCallback {
         void onNavigate(String page);
 
         void onLogout();
     }
 
+    // Constructor
     public SidebarPanel(String userRole, String userName, NavigationCallback callback) {
         this.callback = callback;
         initializeUI(userRole, userName);
     }
 
+    // Initializes the UI components
     private void initializeUI(String userRole, String userName) {
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
@@ -138,6 +139,7 @@ public class SidebarPanel extends JPanel {
         add(userPanel, BorderLayout.SOUTH);
     }
 
+    // Adds a menu item to the sidebar
     private void addMenuItem(String label, String pageId, ImageIcon darkIcon, ImageIcon lightIcon) {
         JButton menuItem = new JButton(label);
         menuItem.setFont(UIConstants.FONT_LABEL);
@@ -174,6 +176,7 @@ public class SidebarPanel extends JPanel {
         menuPanel.add(Box.createVerticalStrut(5));
     }
 
+    // Updates the style of a menu item
     private void updateMenuItemStyle(JButton button, boolean isActive) {
         // Get stored icon variants
         ImageIcon darkIcon = (ImageIcon) button.getClientProperty("SidebarPanel.darkIcon");
@@ -214,6 +217,7 @@ public class SidebarPanel extends JPanel {
         }
     }
 
+    // Refreshes the styles of all menu items
     private void refreshMenuStyles() {
         for (Component comp : menuPanel.getComponents()) {
             if (comp instanceof JButton) {
@@ -225,6 +229,7 @@ public class SidebarPanel extends JPanel {
         }
     }
 
+    // Sets the current page and refreshes the styles
     public void setCurrentPage(String page) {
         this.currentPage = page;
         refreshMenuStyles();

@@ -6,10 +6,7 @@ import clinicapp.service.PatientManager;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Main application frame with sidebar navigation
- * Replaces the old tabbed interface with a modern sidebar layout
- */
+// Main application frame with sidebar navigation
 public class MainFrame extends JFrame {
     private PatientManager patientManager;
     private DoctorManager doctorManager;
@@ -69,7 +66,7 @@ public class MainFrame extends JFrame {
             public void onNavigate(String page) {
                 switchToPage(page);
             }
-        }, appointmentManager, currentUser);
+        }, appointmentManager, patientManager, doctorManager, currentUser);
 
         patientPanel = new PatientPanel(patientManager);
         doctorPanel = new DoctorPanel(doctorManager);
@@ -96,10 +93,18 @@ public class MainFrame extends JFrame {
         cardLayout.show(contentPanel, "dashboard");
     }
 
+    // Switches to the specified page
     private void switchToPage(String page) {
+        // Refresh data when switching to certain panels
+        if (page.equals("dashboard")) {
+            dashboardPanel.refreshData();
+        } else if (page.equals("schedule")) {
+            schedulePanel.refreshData();
+        }
         cardLayout.show(contentPanel, page);
     }
 
+    // Handles logout
     private void handleLogout() {
         int confirm = JOptionPane.showConfirmDialog(
                 this,
@@ -121,9 +126,7 @@ public class MainFrame extends JFrame {
         }
     }
 
-    /**
-     * Navigate to a specific page programmatically
-     */
+    // Navigate to a specific page programmatically
     public void navigateTo(String page) {
         sidebarPanel.setCurrentPage(page);
         switchToPage(page);
