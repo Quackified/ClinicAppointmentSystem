@@ -24,6 +24,7 @@ public class WalkInQueuePanel extends JPanel {
     private JLabel queueSizeLabel;
     private JLabel statsLabel;
     private JComboBox<String> patientCombo;
+    private JComboBox<String> doctorCombo;
     private JTextField reasonField;
     
     // Constructor
@@ -153,6 +154,14 @@ public class WalkInQueuePanel extends JPanel {
         patientCombo.setPreferredSize(new Dimension(300, 35));
         loadPatients();
         
+        // Doctor selection
+        JLabel doctorLabel = new JLabel("Assign Doctor: *");
+        doctorLabel.setFont(UIConstants.FONT_LABEL);
+        
+        doctorCombo = new JComboBox<>();
+        doctorCombo.setPreferredSize(new Dimension(300, 35));
+        loadDoctors();
+        
         // Reason field
         JLabel reasonLabel = new JLabel("Reason for Visit: *");
         reasonLabel.setFont(UIConstants.FONT_LABEL);
@@ -176,12 +185,18 @@ public class WalkInQueuePanel extends JPanel {
         formPanel.add(patientCombo, gbc);
         
         gbc.gridy = 2;
-        formPanel.add(reasonLabel, gbc);
+        formPanel.add(doctorLabel, gbc);
         
         gbc.gridy = 3;
-        formPanel.add(reasonField, gbc);
+        formPanel.add(doctorCombo, gbc);
         
         gbc.gridy = 4;
+        formPanel.add(reasonLabel, gbc);
+        
+        gbc.gridy = 5;
+        formPanel.add(reasonField, gbc);
+        
+        gbc.gridy = 6;
         gbc.insets = new Insets(20, 8, 8, 8);
         formPanel.add(addButton, gbc);
         
@@ -199,7 +214,7 @@ public class WalkInQueuePanel extends JPanel {
         infoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         infoPanel.add(infoLabel);
         
-        gbc.gridy = 5;
+        gbc.gridy = 7;
         gbc.insets = new Insets(15, 8, 8, 8);
         formPanel.add(infoPanel, gbc);
         
@@ -289,6 +304,16 @@ public class WalkInQueuePanel extends JPanel {
         }
     }
     
+    // Load doctors into combo box
+    private void loadDoctors() {
+        doctorCombo.removeAllItems();
+        List<clinicapp.model.Doctor> doctors = doctorManager.getAvailableDoctors();
+        
+        for (clinicapp.model.Doctor doctor : doctors) {
+            doctorCombo.addItem(doctor.getId() + " - " + doctor.getName() + " (" + doctor.getSpecialization() + ")");
+        }
+    }
+    
     // Add patient to queue
     private void addPatientToQueue() {
         if (patientCombo.getSelectedItem() == null) {
@@ -322,25 +347,31 @@ public class WalkInQueuePanel extends JPanel {
             return;
         }
         
-        // Schedule walk-in appointment for today using existing AppointmentManager
-        // Walk-ins get immediate time slots
-        // Get first available doctor for walk-in
-        List<clinicapp.model.Doctor> doctors = doctorManager.getAvailableDoctors();
-
-        if (doctors.isEmpty()) {
+        // Get selected doctor
+        if (doctorCombo.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this, 
-                "No doctors available", 
+                "Please select a doctor", 
+                "No Doctor Selected", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        String selectedDoctor = (String) doctorCombo.getSelectedItem();
+        int doctorId = Integer.parseInt(selectedDoctor.split(" - ")[0]);
+        clinicapp.model.Doctor doctor = doctorManager.getDoctorById(doctorId);
+        
+        if (doctor == null) {
+            JOptionPane.showMessageDialog(this, 
+                "Doctor not found", 
                 "Error", 
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        // Schedule walk-in appointment for today using existing AppointmentManager
-        // Walk-ins get immediate time slots
-        // Get first available doctor for walk-in
+        
+        // Schedule walk-in appointment for today using selected doctor
         Appointment appointment = appointmentManager.scheduleAppointment(
             patient, 
-            doctors.get(0), // NOW: Use first available doctor instead of null
+            doctor,
             java.time.LocalDate.now(),
             java.time.LocalTime.now(),
             java.time.LocalTime.now().plusMinutes(30),

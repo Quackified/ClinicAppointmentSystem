@@ -1,1 +1,42 @@
+# Compiled class files
+*.class
+bin/
+out/
+build/
+
+# IDE specific files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
 /nbproject/private/
+nbproject/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Package files (keep source, ignore compiled)
+*.jar
+*.war
+*.ear
+
+# Exception: Keep library JARs
+!lib/*.jar
+
+# CSV exports (optional - uncomment if you don't want to track exports)
+# exports/
