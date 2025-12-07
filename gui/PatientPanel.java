@@ -147,6 +147,15 @@ public class PatientPanel extends JPanel {
         patientTable.setFont(UIConstants.FONT_BODY);
         patientTable.getTableHeader().setFont(UIConstants.FONT_LABEL);
 
+        patientTable.getColumnModel().getColumn(0).setPreferredWidth(25);
+        patientTable.getColumnModel().getColumn(1).setPreferredWidth(100);
+        patientTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        patientTable.getColumnModel().getColumn(3).setPreferredWidth(25);
+        patientTable.getColumnModel().getColumn(4).setPreferredWidth(100);
+        patientTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        patientTable.getColumnModel().getColumn(6).setPreferredWidth(100);
+        patientTable.getColumnModel().getColumn(7).setPreferredWidth(25);
+
         // Add double-click to edit
         patientTable.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
